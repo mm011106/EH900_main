@@ -84,7 +84,7 @@ boolean Measurement::currentOn(void){
     if (pio.digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
         f_current_sorce_fail = true;
         pio.digitalWrite(PIO_CURRENT_ENABLE,CURRENT_OFF);
-        LevelMeter->setSensorError();
+        // LevelMeter->setSensorError();
         Serial.print(" FAIL.  ");
     } else {
         f_current_sorce_fail = false;
@@ -93,8 +93,7 @@ boolean Measurement::currentOn(void){
     }
     Serial.println("Fin. --");
 
-
-    return f_current_sorce_fail;
+    return !f_current_sorce_fail;
 }
 
 void Measurement::currentOff(void){
@@ -130,8 +129,10 @@ boolean Measurement::measSingle(void){
 
     if (!Measurement::currentOn()){
         flag = false;
+        LevelMeter->setSensorError();
         Measurement::currentOff();
     } else {
+        LevelMeter->clearSensorError();
         Serial.print("meas start..  ");
 
         for (uint16_t i =0 ; i < 3; i++){
