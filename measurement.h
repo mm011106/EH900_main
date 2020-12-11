@@ -27,7 +27,7 @@ class Measurement {
         boolean init(eh900* pModel);
 
     //  電流源制御
-        // 電流源   ON  電流源が正常かどうかを返す
+        // 電流源   ON  電流源が正常かどうかを返す(正常=true)
         boolean currentOn(void);
         // 電流源   OFF
         void currentOff(void);
