@@ -45,6 +45,10 @@ struct Meter_parameters{
     float_t adc_err_comp_diff_0_1;
     //      ADコンバータのエラー補正系数    電流計測
     float_t adc_err_comp_diff_2_3;
+    //      ADコンバータのオフセット補正    電圧計測
+    int16_t adc_OFS_comp_diff_0_1;
+    //      ADコンバータのオフセット補正    電流計測
+    int16_t adc_OFS_comp_diff_2_3;
 
     //      電流源初期設定値    [0.1mA] 
     uint16_t current_set_default;
@@ -181,6 +185,30 @@ class eh900
         void setAdcErrComp23(float_t value){
             if( 0.9 < value && value < 1.1 ){
                 eh_status.adc_err_comp_diff_2_3 = value;
+            }
+        };
+
+        //  ADコンバータのオフセット補正値を得る 電圧計測チャネル
+        int16_t getAdcOfsComp01(void){
+            return eh_status.adc_OFS_comp_diff_0_1;
+        };
+
+        //  ADコンバータのオフセット補正値を設定 電圧計測チャネル
+        void setAdcOfsComp01(int16_t value){
+            if( -256 < value && value < 256 ){
+                eh_status.adc_OFS_comp_diff_0_1 = value;
+            }
+        };
+
+        //  ADコンバータのオフセット補正値を得る 電流計測チャネル
+        int16_t getAdcOfsComp23(void){
+            return eh_status.adc_OFS_comp_diff_2_3;
+        };
+
+        //  ADコンバータのオフセット補正値を設定 電流計測チャネル
+        void setAdcOfsComp23(int16_t value){
+            if( -256 < value && value < 256 ){
+                eh_status.adc_OFS_comp_diff_2_3 = value;
             }
         };
 

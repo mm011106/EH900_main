@@ -19,9 +19,11 @@ boolean Measurement::init(eh900* pModel){
     Serial.print("Sensor Length:"); Serial.println(LevelMeter->getSensorLength());
     // Serial.print("Sensor R:"); Serial.println(sensor_resistance);
 
-    //  ADコンバータゲイン補正係数    
+    //  ADコンバータ 補正係数    
     adc_err_comp_diff_0_1 = LevelMeter->getAdcErrComp01();
     adc_err_comp_diff_2_3 = LevelMeter->getAdcErrComp23();
+    adc_OFS_comp_diff_0_1 = LevelMeter->getAdcOfsComp01();
+    adc_OFS_comp_diff_2_3 = LevelMeter->getAdcOfsComp23();
     //  電流源設定初期値（調整済みの値）
     current_source_default = LevelMeter->getCurrentSetting();
 
@@ -134,6 +136,7 @@ boolean Measurement::measSingle(void){
     } else {
         LevelMeter->clearSensorError();
         Serial.print("meas start..  ");
+        delay(100); // issue1
 
         for (uint16_t i =0 ; i < 3; i++){
             Measurement::readLevel();
@@ -190,12 +193,18 @@ void Measurement::readLevel(void){
 uint32_t Measurement::read_voltage(void){  // return measured voltage of sensor in [microVolt]
 
     float results = 0.0;
+    float readout = 0.0;
     uint16_t   avg = ADC_AVERAGE_DEFAULT;     // averaging
 
-    Serial.print("Voltage Meas: read_voltage(0-1): ");
+    if (DEBUG) {Serial.print("Voltage Meas: read_voltage(0-1): ");}
 
     for (uint16_t i = 0; i < avg; i++){
-      results += (float)adconverter.readADC_Differential_0_1();
+    //   results += (float)adconverter.readADC_Differential_0_1();
+      readout = (float)(adconverter.readADC_Differential_0_1() - adc_OFS_comp_diff_0_1);
+      if (DEBUG) {
+          Serial.print(", "); Serial.print(readout);
+      }
+      results += readout;
     }
 
 //    uint16_t gain_setting = ads.getGain();
@@ -221,8 +230,9 @@ uint32_t Measurement::read_voltage(void){  // return measured voltage of sensor 
         results = 1.0;
     }
 
-    Serial.print(results);
-    Serial.println(" uV: Fin. --");
+    if (DEBUG) {
+        Serial.print(results); Serial.println(" uV: Fin. --");
+    }
 
     return round(results);
 }
@@ -235,7 +245,7 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
     Serial.print("Current Meas: read_voltage(2-3): ");
 
     for (uint16_t i = 0; i < avg; i++){
-      results += (float)adconverter.readADC_Differential_2_3();
+      results += (float)(adconverter.readADC_Differential_2_3() - adc_OFS_comp_diff_2_3);
     }
 
     float adc_gain_coeff=0.0;

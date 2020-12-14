@@ -68,6 +68,8 @@ class Measurement {
         //  ADコンバータの誤差補正  FRAMから読み込む可能性があるので、変数
         float adc_err_comp_diff_0_1=1.0;
         float adc_err_comp_diff_2_3=1.0;
+        int16_t adc_OFS_comp_diff_0_1=0;
+        int16_t adc_OFS_comp_diff_2_3=0;
 
         //  電流源の初期設定値  FRAMから読み込む可能性があるので、変数にしている
         uint16_t current_source_default = 750;
