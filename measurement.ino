@@ -203,6 +203,7 @@ uint32_t Measurement::read_voltage(void){  // return measured voltage of sensor 
       readout = (float)(adconverter.readADC_Differential_0_1() - adc_OFS_comp_diff_0_1);
       if (DEBUG) {
           Serial.print(", "); Serial.print(readout);
+          
       }
       results += readout;
     }
