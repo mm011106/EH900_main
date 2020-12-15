@@ -124,8 +124,19 @@ void loop() {
         // DECIMATION 回ごとに1回計測  適度に調整
         ++deci_counter;
         // if ( (deci_counter == DECIMATION -1) && meas_unit.getStatus()){ // 電流源が動作していれば計測
+        
+        
         if (deci_counter == DECIMATION -1 ){
             Serial.print("-");
+            if (!DEBUG) {
+                //  電流源の動作確認
+                if ( !meas_uint.getStatus() ){
+                    //  動作していなければ
+                    digitalWrite(LED_BUILTIN, LOW);  
+                    level_meter.setMode(Timer);
+                    Serial.println("  Current Sorce Fail. Cont meas terminated...");
+                }
+            }
             //  1回計測、表示
             meas_uint.readLevel();
             lcd_display.showLevel();
@@ -204,7 +215,8 @@ void loop() {
 
                 if (!DEBUG){
                     //  電流をon
-                    if ( ! meas_uint.currentOn() ){     //  電流源にエラーがあればエラー表示してタイマーモードへ移行
+                    if ( ! meas_uint.currentOn() ){ 
+                        //  電流源にエラーがあればエラー表示してタイマーモードへ移行
                         level_meter.setSensorError();
                         level_meter.setMode(Timer);
                     }

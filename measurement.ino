@@ -82,7 +82,7 @@ boolean Measurement::currentOn(void){
     Serial.print("currentCtrl:ON -- "); 
     pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);
     delay(10); // エラー判定が可能になるまで10ms待つ
-    
+
     if (pio.digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
         f_current_source_fail = true;
         pio.digitalWrite(PIO_CURRENT_ENABLE,CURRENT_OFF);
@@ -117,7 +117,9 @@ void Measurement::setCurrent(uint16_t current){  // current in [0.1milliAmp]
 }
 
 boolean Measurement::getStatus(void){
-    return (pio.digitalRead(PIO_CURRENT_ENABLE)==CURRENT_ON);
+    return (   (pio.digitalRead(PIO_CURRENT_ENABLE)==CURRENT_ON)    \
+            && (pio.digitalRead(PIO_CURRENT_ERRFLAG) == HIGH)        \
+    );
 
 }
 
