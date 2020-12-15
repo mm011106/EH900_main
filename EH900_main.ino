@@ -152,7 +152,6 @@ void loop() {
         if (f_timer_timeup) {  //  タイムアップが起きれば計測する
             f_timer_timeup = false;
             Serial.print("Timer UP - ");
-
             dummy_meas_single();
             lcd_display.showLevel();
             meas_uint.setVmon(level_meter.getLiquidLevel());

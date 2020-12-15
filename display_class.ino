@@ -29,7 +29,7 @@ void Eh_display::init(eh900* pModel, uint16_t error){
 
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
         rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
-        rgb_lcd::print("inch");
+        rgb_lcd::print("inch   ");
     } else {
         rgb_lcd::setCursor(1, 0);
         rgb_lcd::print("INIT ERR:");
@@ -65,6 +65,17 @@ void Eh_display::showLevel(void){
         rgb_lcd::setCursor(POSITION_BAR_GRAPH+x_pos,0);
         rgb_lcd::write((unsigned char)(fine-1));
     };
+
+    //  センサエラー表示
+    if(pMeter->isSensorError()){
+        rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
+        rgb_lcd::print("-ERROR-");
+    } else {
+        rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
+        rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
+        rgb_lcd::print("inch   ");
+    }
+    
 }
 
 void Eh_display::showMode(void){
