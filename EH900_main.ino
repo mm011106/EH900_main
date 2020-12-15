@@ -6,6 +6,7 @@
 #include "measurement.h"
 #include "display_class.h"
 
+
 constexpr uint16_t MEAS_SWITCH = D3;    //  スイッチのポート指定
 constexpr uint16_t DURATION_LONG_PRESS = 2000; // 長押しを判定する時間[ms]
 constexpr uint32_t ONE_SECOND = 999025; //  １秒のタイマ設定値（調整込み）  [us]
@@ -52,6 +53,8 @@ void setup() {
         level_meter.setMode(Timer);
         level_meter.setAdcErrComp01(1.0);
         level_meter.setAdcErrComp23(1.0);
+        level_meter.setAdcOfsComp01(0);
+        level_meter.setAdcOfsComp23(0);
         level_meter.setCurrentSetting(750);
     };
     Serial.println(system_error);
@@ -61,11 +64,15 @@ void setup() {
     if (meas_uint.init(&level_meter)){
         Serial.println(" -- OK ");
     } else {
+        Serial.println(" -- Fail..");
         system_error |= 2;
     };
     Serial.println(system_error);
 
-    if (DEBUG){ system_error = 0; };
+    if (DEBUG){ 
+        Serial.println("DEBUG MODE!!!");
+        system_error = 0;
+    };
 
     Serial.println("Disp : "); 
     lcd_display.init(&level_meter, system_error);
@@ -196,11 +203,13 @@ void loop() {
                 digitalWrite(LED_BUILTIN, HIGH);
                 lcd_display.showMode();
 
-                //  電流をon
-                //  if (!measurment.currentOn){     //  電流源にエラーがあればエラー表示してタイマーモードへ移行
-                    // eh900.sensorError=true;
-                    // eh900.mode=Timer;  
-                // }
+                if (!DEBUG){
+                    //  電流をon
+                    if ( ! meas_uint.currentOn() ){     //  電流源にエラーがあればエラー表示してタイマーモードへ移行
+                        level_meter.setSensorError();
+                        level_meter.setMode(Timer);
+                    }
+                }
 
                 break;
 
@@ -225,7 +234,11 @@ void dummy_meas_single(void){
     Serial.print("timer start.. ");
 
     disp_update_timer -> resume();//    表示リフレッシュ用タイマ動作開始
-    meas_uint.measSingle();
+    if (!DEBUG) {
+        meas_uint.measSingle();
+    } else{
+        delay(3000);
+    }
     disp_update_timer -> pause();   //  表示リフレッシュ用タイマ動作終了
     disp_update_timer -> refresh(); //      同  リセット
 

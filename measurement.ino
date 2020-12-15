@@ -77,25 +77,24 @@ boolean Measurement::init(eh900* pModel){
 }
 
 boolean Measurement::currentOn(void){
-    boolean f_current_sorce_fail = true;
-    pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);      
-    
-    Serial.print("currentCtrl:ON -- "); 
+    boolean f_current_source_fail = true;
 
-    delay(10); // wait for starting up 10ms
+    Serial.print("currentCtrl:ON -- "); 
+    pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);
+    delay(10); // エラー判定が可能になるまで10ms待つ
+    
     if (pio.digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
-        f_current_sorce_fail = true;
+        f_current_source_fail = true;
         pio.digitalWrite(PIO_CURRENT_ENABLE,CURRENT_OFF);
-        // LevelMeter->setSensorError();
         Serial.print(" FAIL.  ");
     } else {
-        f_current_sorce_fail = false;
+        f_current_source_fail = false;
+        delay(100); // issue1: 電流のステイブルを待つ
         Serial.print(" OK.  ");
-        // LevelMeter->clearSensorError();  メソッドがないのでメモとして
     }
     Serial.println("Fin. --");
 
-    return !f_current_sorce_fail;
+    return !f_current_source_fail;
 }
 
 void Measurement::currentOff(void){
@@ -108,8 +107,7 @@ void Measurement::setCurrent(uint16_t current){  // current in [0.1milliAmp]
     uint16_t value=0;
 
     Serial.print("currentSet: -- "); 
-    if ( 670 < current && current < 830)
-      {
+    if ( 670 < current && current < 830){
         value = (( current - 666 ) * DAC_COUNT_PER_VOLT) / CURRENT_SORCE_VI_COEFF;
         // current -> vref converting function
         current_adj_dac.setVoltage(value, false);
@@ -136,12 +134,13 @@ boolean Measurement::measSingle(void){
     } else {
         LevelMeter->clearSensorError();
         Serial.print("meas start..  ");
-        delay(100); // issue1
 
+        //  センサへの熱伝導待ち時間の間に3回計測する（動いていますというフィードバックのため）
         for (uint16_t i =0 ; i < 3; i++){
             Measurement::readLevel();
             delay(delay_time/3);
         }
+        //  確定値の計測
         Measurement::readLevel();
 
         Serial.println("single: meas end.");
