@@ -30,6 +30,9 @@ class Eh_display : public rgb_lcd {
 
         void showTimer(void);
 
+        //  画面全体をフラッシュさせる  300ms必要
+        void flashDisplay(void);
+
 
     private:
         eh900* pMeter;

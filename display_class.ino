@@ -106,6 +106,14 @@ void Eh_display::showTimer(void){
 
 }
 
+void Eh_display::flashDisplay(void){
+    constexpr uint16_t interval = 200;
+    rgb_lcd::noDisplay();
+    delay(interval + 100);
+    rgb_lcd::display();
+    delay(interval);
+}
+
 String right_align(String num_in_string, uint16_t digit){
 
     String right_aligned="";
