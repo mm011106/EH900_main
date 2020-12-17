@@ -5,7 +5,7 @@ Measurement::Measurement(void ){
 
 boolean Measurement::init(eh900* pModel){
     eh900* LevelMeter = pModel;
-    boolean initSucceed = true;
+    boolean f_init_succeed = true;
     boolean status = false;
 
     Serial.print("Meas init -- "); 
@@ -36,7 +36,7 @@ boolean Measurement::init(eh900* pModel){
     status = current_adj_dac.begin(I2C_ADDR_CURRENT_ADJ, &Wire);
     if (!status) { 
         Serial.print("error on Current Sorce DAC.  ");
-        initSucceed = false;
+        f_init_succeed = false;
     } else {
         // 電流値設定
         Measurement::setCurrent(current_source_default);
@@ -46,7 +46,7 @@ boolean Measurement::init(eh900* pModel){
     status = v_mon_dac.begin(I2C_ADDR_V_MON, &Wire);
     if (!status) { 
         Serial.print("error on Analog Monitor DAC.  ");
-        initSucceed = false;
+        f_init_succeed = false;
     } else {
         // アナログモニタ出力   リセット 
         Measurement::setVmon(0);
@@ -56,7 +56,7 @@ boolean Measurement::init(eh900* pModel){
     status = pio.begin();      // use default address 0x20
     if (!status) { 
         Serial.print("error on PIO.  ");
-        initSucceed = false;
+        f_init_succeed = false;
     } else {
         //  set IO port 
         pio.pinMode(PIO_CURRENT_ERRFLAG, INPUT);
@@ -72,7 +72,7 @@ boolean Measurement::init(eh900* pModel){
 
     Serial.println(" Fin. --"); 
 
-    return initSucceed;
+    return f_init_succeed;
 
 }
 

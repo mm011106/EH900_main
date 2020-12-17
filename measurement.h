@@ -48,9 +48,13 @@ class Measurement {
         void setVmon(uint16_t);
 
     private:
+        //  電流設定用DAコンバータ
         Adafruit_MCP4725    current_adj_dac;
+        //  アナログモニタ出力用DAコンバータ
         Adafruit_MCP4725    v_mon_dac;
+        //  電流源制御用    GPIO
         Adafruit_MCP23008   pio;
+        //  電圧・電流読み取り用ADコンバータ
         Adafruit_ADS1115    adconverter;
 
         eh900* LevelMeter;
@@ -60,18 +64,21 @@ class Measurement {
         uint32_t read_voltage(void);
         uint32_t read_current(void);
 
-        //  センサ抵抗値    初期化時センサ長から計算して保持する
+        //  センサ抵抗値
         float sensor_resistance = 0.0;
-        //  待ち時間    初期化時センサ長から計算して保持する
+        //  熱伝導待ち時間 
         uint16_t delay_time = 0;
         
-        //  ADコンバータの誤差補正  FRAMから読み込む可能性があるので、変数
+        //  ADコンバータ ch0-1  ゲイン誤差補正
         float adc_err_comp_diff_0_1=1.0;
+        //  ADコンバータ ch2-3  ゲイン誤差補正
         float adc_err_comp_diff_2_3=1.0;
+        //  ADコンバータ ch0-1  オフセット誤差補正[LSB]
         int16_t adc_OFS_comp_diff_0_1=0;
+        //  ADコンバータ ch2-3  オフセット誤差補正[LSB]
         int16_t adc_OFS_comp_diff_2_3=0;
 
-        //  電流源の初期設定値  FRAMから読み込む可能性があるので、変数にしている
+        //  電流源の初期設定値 [0.1mA] 
         uint16_t current_source_default = 750;
 
 

@@ -5,7 +5,7 @@
 #include "eh900_class.h"
 #include "measurement.h"
 #include "display_class.h"
-
+#include "eh900_config.h"
 
 constexpr uint16_t MEAS_SWITCH = D3;    //  スイッチのポート指定
 constexpr uint16_t DURATION_LONG_PRESS = 2000; // 長押しを判定する時間[ms]
@@ -57,6 +57,7 @@ void setup() {
         level_meter.setAdcOfsComp23(0);
         level_meter.setCurrentSetting(750);
     };
+
     Serial.println(system_error);
 
     
@@ -82,8 +83,6 @@ void setup() {
         delay(1000);
     };
 
-    lcd_display.showLevel();
-
     Serial.println("Timer : "); 
 
     //  100ms タイマ  手動計測時の液面表示アップデート用
@@ -105,7 +104,27 @@ void setup() {
     Serial.println("");
     Serial.println("START : ---");
 
-    delay(500);
+    delay(3000);
+
+    if (meas_sw.isDepressed()){
+        menu_main();
+        
+        lcd_display.noDisplay();
+        Serial.print("QUIT config: store parameters into FRAM...");
+        level_meter.setTimerElasped(0);
+        level_meter.setLiquidLevel(0);
+        level_meter.clearSensorError();
+
+        level_meter.storeParameter();        
+        
+        delay(500);
+        lcd_display.display(); 
+    }
+    
+    lcd_display.showMeter();
+    lcd_display.showMode();
+    lcd_display.showTimer();
+    lcd_display.showLevel();
 
 }
 

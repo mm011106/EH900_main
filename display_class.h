@@ -22,6 +22,9 @@ class Eh_display : public rgb_lcd {
         //      error が0以外ならエラーを表示する
         void init(eh900* pModel,uint16_t error);
 
+        //  液面計の表示に設定する
+        void showMeter(void);
+
         //  液面レベルの表示    数値＋バーグラフ
         void showLevel(void);
 

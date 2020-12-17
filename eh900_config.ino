@@ -49,7 +49,13 @@ void menu_main(void){
         lcd_display.print(menu_names[i]);
     }
 
-   while (! f_exit){
+    while (meas_sw.isDepressed()){
+        meas_sw.updateStatus();
+    }
+    meas_sw.clearDuration();
+    meas_sw.clearChangeStatus();
+
+    while (! f_exit){
 
         meas_sw.updateStatus();
     
@@ -106,6 +112,7 @@ void menu_main(void){
         delay(50);
     }
     f_exit = false;
+    lcd_display.noBlink();
     return;
 }
 

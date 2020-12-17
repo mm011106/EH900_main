@@ -11,16 +11,23 @@ void Eh_display::init(eh900* pModel, uint16_t error){
     pMeter = pModel;
 
     rgb_lcd::begin(16,2);
-    rgb_lcd::clear();
 
     for (int i=0; i<5; i++){
         rgb_lcd::createChar(i, bar_graph[i]);
     }
 
-    // rgb_lcd::setCursor(0, 0);
-    // rgb_lcd::print("...Initializing");
+    rgb_lcd::clear();
+    rgb_lcd::setCursor(2, 0);
 
-    if(error==0){
+    rgb_lcd::print("-- EH-900 --");
+    if(error != 0){
+        rgb_lcd::setCursor(3, 1);
+        rgb_lcd::print("INIT ERR:");
+        rgb_lcd::print(right_align(String( error ), 2));
+    }
+}
+
+void Eh_display::showMeter(void){
         rgb_lcd::setCursor(0, 0);
         rgb_lcd::print(" :  /   E:    :F");
 
@@ -30,13 +37,7 @@ void Eh_display::init(eh900* pModel, uint16_t error){
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
         rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
         rgb_lcd::print("inch   ");
-    } else {
-        rgb_lcd::setCursor(1, 0);
-        rgb_lcd::print("INIT ERR:");
-        rgb_lcd::print(right_align(String( error ), 2));
-    }
 }
-
 
 void Eh_display::showLevel(void){
     
