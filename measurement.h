@@ -81,7 +81,6 @@ class Measurement {
         //  電流源の初期設定値 [0.1mA] 
         uint16_t current_source_default = 750;
 
-
 };
 
 //  I2C adress 
@@ -89,7 +88,6 @@ constexpr uint16_t I2C_ADDR_ADC            = 0x48;
 constexpr uint16_t I2C_ADDR_CURRENT_ADJ    = 0x60;
 constexpr uint16_t I2C_ADDR_V_MON          = 0x61;
 constexpr uint16_t I2C_ADDR_PIO            = 0x20;
-
 
 // ADの読み値から電圧値を計算するための系数 [/ micro Volts/LSB]
 // 3.3V電源、差動計測（バイポーラ出力）を想定
@@ -115,8 +113,9 @@ constexpr uint16_t ADC_AVERAGE_DEFAULT = 10;
 //  PIOのポート番号の設定と論理レベル設定
 constexpr uint16_t PIO_CURRENT_ENABLE    = 4 ;  // ON = LOW,  OFF = HIGH
 constexpr uint16_t PIO_CURRENT_ERRFLAG   = 0 ;  // LOW = FAULT(short or open), HIGH = NOMAL
-#define CURRENT_OFF       (HIGH)
-#define CURRENT_ON        (LOW)
+// 電流源コントロールロジック定義
+constexpr uint16_t CURRENT_OFF = HIGH ;
+constexpr uint16_t CURRENT_ON = LOW ;
 
 //  電流源設定用DAC MCP4725 1Vあたりの電流[0.1mA]  A/V
 constexpr uint16_t  CURRENT_SORCE_VI_COEFF  = 56;
