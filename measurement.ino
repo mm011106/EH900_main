@@ -151,20 +151,7 @@ boolean Measurement::measSingle(void){
 
         flag = true;
     }
-        //  ---- FOR TEST
-            Serial.print("meas start..  ");
-
-            for (uint16_t i =0 ; i < 3; i++){
-                Measurement::readLevel();
-                delay(delay_time/3);
-            }
-            Measurement::readLevel();
-
-            Serial.println("single: meas end.");
-
-            Measurement::currentOff();
-        //  ---- FOR TEST
-
+    
     Serial.println("singleShot: Fin. --"); 
 
     return flag;
