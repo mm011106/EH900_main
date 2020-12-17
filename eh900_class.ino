@@ -20,7 +20,8 @@ boolean eh900::init(void){
 
         // 設定値をFRAMから読み込む
         nvram_get(FRAM_PARM_ADDR, eh_status);
-        Serial.print("Now, Sensor Length: "); Serial.println(eh_status.sensor_length);
+        Serial.print(" .. Sensor Length: "); Serial.println(eh_status.sensor_length);
+        Serial.print(" .. Timer period: "); Serial.println(eh_status.timer_period);
         // eh_status.timer_period  = 40;
         // eh_status.sensor_length = 20;
 
