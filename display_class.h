@@ -4,13 +4,6 @@
 #include <rgb_lcd.h>
 #include "eh900_class.h"
 
-constexpr uint16_t POSITION_BAR_GRAPH       = 10;
-constexpr uint16_t POSITION_SENSOR_LENGTH   = 1;
-constexpr uint16_t POSITION_TIMER_SET       = 5;
-constexpr uint16_t POSITION_TIMER_COUNT     = 2;
-constexpr uint16_t POSITION_LEVEL           = 10;
-constexpr uint16_t POSITION_MODE            = 0;
-
 class Eh_display : public rgb_lcd {
 
     public:
@@ -25,7 +18,8 @@ class Eh_display : public rgb_lcd {
         //  液面計の表示に設定する
         void showMeter(void);
 
-        //  液面レベルの表示    数値＋バーグラフ
+        ///  液面レベルの表示  数値＋バーグラフ
+        /// 電流源のエラー表示
         void showLevel(void);
 
         //  モードの表示 100ms程度で周期的に呼ぶことでスムースな表示になる
@@ -36,7 +30,6 @@ class Eh_display : public rgb_lcd {
         //  画面全体をフラッシュさせる  300ms必要
         void flashDisplay(void);
 
-
     private:
         eh900* pMeter;
 
@@ -44,59 +37,5 @@ class Eh_display : public rgb_lcd {
 
 //  指定桁数の数字（ストリング）を右寄せで表示
 String right_align(String num_in_string, uint16_t digit);
-
-byte bar_graph[5][8] = {
-
-    {
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000,
-        0b10000 
-    },
-    {
-        0b11000,
-        0b11000,
-        0b11000,
-        0b11000,
-        0b11000,
-        0b11000,
-        0b11000,
-        0b11000
-    },
-    {
-        0b11100,
-        0b11100,
-        0b11100,
-        0b11100,
-        0b11100,
-        0b11100,
-        0b11100,
-        0b11100
-    },   
-    {
-        0b11110,
-        0b11110,
-        0b11110,
-        0b11110,
-        0b11110,
-        0b11110,
-        0b11110,
-        0b11110
-    },   
-    {
-        0b11111,
-        0b11111,
-        0b11111,
-        0b11111,
-        0b11111,
-        0b11111,
-        0b11111,
-        0b11111
-    },
-};
 
 #endif // _DISPLAY_CLASS_H_

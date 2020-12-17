@@ -1,5 +1,68 @@
 #include "display_class.h"
 
+namespace{
+    constexpr uint16_t POSITION_BAR_GRAPH       = 10;
+    constexpr uint16_t POSITION_SENSOR_LENGTH   = 1;
+    constexpr uint16_t POSITION_TIMER_SET       = 5;
+    constexpr uint16_t POSITION_TIMER_COUNT     = 2;
+    constexpr uint16_t POSITION_LEVEL           = 10;
+    constexpr uint16_t POSITION_MODE            = 0;
+
+    byte bar_graph[5][8] = {
+        {
+            0b10000,
+            0b10000,
+            0b10000,
+            0b10000,
+            0b10000,
+            0b10000,
+            0b10000,
+            0b10000 
+        },
+        {
+            0b11000,
+            0b11000,
+            0b11000,
+            0b11000,
+            0b11000,
+            0b11000,
+            0b11000,
+            0b11000
+        },
+        {
+            0b11100,
+            0b11100,
+            0b11100,
+            0b11100,
+            0b11100,
+            0b11100,
+            0b11100,
+            0b11100
+        },   
+        {
+            0b11110,
+            0b11110,
+            0b11110,
+            0b11110,
+            0b11110,
+            0b11110,
+            0b11110,
+            0b11110
+        },   
+        {
+            0b11111,
+            0b11111,
+            0b11111,
+            0b11111,
+            0b11111,
+            0b11111,
+            0b11111,
+            0b11111
+        },
+    };
+
+}
+
 // LcdDisplay::LcdDisplay(const uint16_t* level){
 Eh_display::Eh_display(){
 
