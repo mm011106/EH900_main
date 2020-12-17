@@ -21,8 +21,10 @@ Eh_display lcd_display;
 eh900 level_meter;
 Measurement meas_uint;
 
+//  手動計測時の表示アップデート用タイマ
 HardwareTimer* disp_update_timer = new HardwareTimer(TIM1);
 
+//  １秒のクロック作成タイマ
 HardwareTimer* tick_tock_timer = new HardwareTimer(TIM3);
 boolean f_tick_tock = false;
 
@@ -75,6 +77,7 @@ void setup() {
         system_error = 0;
     };
 
+    //  画面初期化  型名の表示・エラー表示
     Serial.println("Disp : "); 
     lcd_display.init(&level_meter, system_error);
 
@@ -84,7 +87,6 @@ void setup() {
     };
 
     Serial.println("Timer : "); 
-
     //  100ms タイマ  手動計測時の液面表示アップデート用
     disp_update_timer -> pause();
     disp_update_timer -> setOverflow(100000 , MICROSEC_FORMAT); 
@@ -98,14 +100,13 @@ void setup() {
     tick_tock_timer -> attachInterrupt(isr_tick_tock);
     tick_tock_timer -> resume();
 
-    // Serial.println(disp_update_timer -> getTimerClkFreq());
-    // Serial.println(tick_tock_timer -> getTimerClkFreq());
-
     Serial.println("");
     Serial.println("START : ---");
 
+    //  設定モードへ移行するスイッチ操作の完了待ち[3s]
     delay(3000);
 
+    //  この時点でスイッチが押されていれば設定モードへ移行
     if (meas_sw.isDepressed()){
         menu_main();
         
@@ -114,13 +115,14 @@ void setup() {
         level_meter.setTimerElasped(0);
         level_meter.setLiquidLevel(0);
         level_meter.clearSensorError();
-
+        //  変更されたパラメタを保存
         level_meter.storeParameter();        
         
         delay(500);
         lcd_display.display(); 
     }
     
+    //  計測モードのために画面初期化
     lcd_display.showMeter();
     lcd_display.showMode();
     lcd_display.showTimer();
