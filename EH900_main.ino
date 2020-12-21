@@ -7,10 +7,19 @@
 #include "display_class.h"
 #include "eh900_config.h"
 
-constexpr uint16_t MEAS_SWITCH = D3;    //  スイッチのポート指定
-constexpr uint16_t DURATION_LONG_PRESS = 2000; // 長押しを判定する時間[ms]
-constexpr uint32_t ONE_SECOND = 999025; //  １秒のタイマ設定値（調整込み）  [us]
-constexpr uint16_t DECIMATION = 10; //  連続計測時のデシメーション（10回ループを回ったら1回計測）
+//  スイッチのポート指定
+constexpr uint16_t MEAS_SWITCH = D3;    
+// 長押しを判定する時間[ms]
+constexpr uint16_t DURATION_LONG_PRESS = 2000; 
+//  １秒のタイマ設定値（調整込み）  [us]
+constexpr uint32_t ONE_SECOND = 999025; 
+//  手動計測時の表示アップデート周期[us]
+constexpr uint32_t UPDATE_CYCLE =300000;    
+//  連続計測時のデシメーション（10回ループを回ったら1回計測）
+constexpr uint16_t DECIMATION = 10; 
+//  ループ1回ごとの時間待ち[ms] 実際のループ１周は  この時間＋処理時間（600us）
+constexpr uint16_t LOOP_WAIT = 100; 
+
 
 constexpr boolean DEBUG = true;  // デバグフラグ
 
@@ -50,8 +59,9 @@ void setup() {
         Serial.print(" -- OK ");
     } else {
         system_error |= 1;
-        level_meter.setSensorLength(6);
-        level_meter.setTimerPeriod(60);
+        //  メモリがない時の液面計パラメタの初期化
+        level_meter.setSensorLength(20);
+        level_meter.setTimerPeriod(1800);
         level_meter.setMode(Timer);
         level_meter.setAdcErrComp01(1.0);
         level_meter.setAdcErrComp23(1.0);
@@ -89,9 +99,9 @@ void setup() {
     };
 
     Serial.println("Timer : "); 
-    //  100ms タイマ  手動計測時の液面表示アップデート用
+    //    手動計測時の液面表示アップデート用タイマ
     disp_update_timer -> pause();
-    disp_update_timer -> setOverflow(300000 , MICROSEC_FORMAT); 
+    disp_update_timer -> setOverflow(UPDATE_CYCLE , MICROSEC_FORMAT); 
     disp_update_timer -> refresh();
     disp_update_timer -> attachInterrupt(isr_disp_update);
 
@@ -100,7 +110,6 @@ void setup() {
     tick_tock_timer -> setOverflow(ONE_SECOND, MICROSEC_FORMAT); 
     tick_tock_timer -> refresh();
     tick_tock_timer -> attachInterrupt(isr_tick_tock);
-    tick_tock_timer -> resume();
 
     Serial.println("");
     Serial.println("START : ---");
@@ -130,6 +139,8 @@ void setup() {
     lcd_display.showTimer();
     lcd_display.showLevel();
 
+    //測定用タイマ  動作開始
+    tick_tock_timer -> resume(); 
 }
 
 // 100ms＋処理時間  でループ 580usぐらいの仕事量
@@ -151,6 +162,7 @@ void loop() {
         
         if (deci_counter == DECIMATION -1 ){
             Serial.print("-");
+            meas_uint.getStatus(); /// for debug
             if (!DEBUG) {
                 //  電流源の動作確認
                 if ( !meas_uint.getStatus() ){
@@ -257,7 +269,7 @@ void loop() {
 
     if (DEBUG) { digitalWrite(D12,LOW); }
 
-    delay(100);
+    delay(LOOP_WAIT);
 }
 
 void dummy_meas_single(void){
