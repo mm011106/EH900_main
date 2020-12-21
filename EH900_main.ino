@@ -14,12 +14,11 @@ constexpr uint16_t DECIMATION = 10; //  連続計測時のデシメーション�
 
 constexpr boolean DEBUG = true;  // デバグフラグ
 
-Switch meas_sw(MEAS_SWITCH);
-
-Eh_display lcd_display;
-
 eh900 level_meter;
-Measurement meas_uint;
+Measurement meas_uint(&level_meter);
+Eh_display lcd_display(&level_meter);
+
+Switch meas_sw(MEAS_SWITCH);
 
 //  手動計測時の表示アップデート用タイマ
 HardwareTimer* disp_update_timer = new HardwareTimer(TIM1);
@@ -34,6 +33,7 @@ uint16_t system_error = 0;      //  起動時のエラーコード
 boolean f_timer_timeup=false;   //  計測タイマー用フラグ
 
 void setup() {
+    
   // initialize digital pin LED_BUILTIN as an output.
     Serial.begin(115200);
     Serial.println("INIT:--");
@@ -60,16 +60,18 @@ void setup() {
         level_meter.setCurrentSetting(750);
     };
 
+    Serial.print("size of level_meter:"); Serial.println(sizeof(level_meter));
     Serial.println(system_error);
 
     
     Serial.print("Meas. Unit : "); 
-    if (meas_uint.init(&level_meter)){
+    if (meas_uint.init()){
         Serial.println(" -- OK ");
     } else {
         Serial.println(" -- Fail..");
         system_error |= 2;
     };
+    Serial.print("size of meas_unit:"); Serial.println(sizeof(meas_uint));
     Serial.println(system_error);
 
     if (DEBUG){ 
@@ -79,7 +81,7 @@ void setup() {
 
     //  画面初期化  型名の表示・エラー表示
     Serial.println("Disp : "); 
-    lcd_display.init(&level_meter, system_error);
+    lcd_display.init(system_error);
 
     //  メモリか測定ユニットにエラーがあれば起動しない。
     while(system_error != 0){
@@ -89,7 +91,7 @@ void setup() {
     Serial.println("Timer : "); 
     //  100ms タイマ  手動計測時の液面表示アップデート用
     disp_update_timer -> pause();
-    disp_update_timer -> setOverflow(100000 , MICROSEC_FORMAT); 
+    disp_update_timer -> setOverflow(300000 , MICROSEC_FORMAT); 
     disp_update_timer -> refresh();
     disp_update_timer -> attachInterrupt(isr_disp_update);
 
@@ -266,11 +268,7 @@ void dummy_meas_single(void){
     Serial.print("timer start.. ");
 
     disp_update_timer -> resume();//    表示リフレッシュ用タイマ動作開始
-    if (!DEBUG) {
-        meas_uint.measSingle();
-    } else{
-        delay(3000);
-    }
+    meas_uint.measSingle();
     disp_update_timer -> pause();   //  表示リフレッシュ用タイマ動作終了
     disp_update_timer -> refresh(); //      同  リセット
 
