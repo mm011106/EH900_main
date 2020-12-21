@@ -3,26 +3,9 @@
 
 #include <Adafruit_FRAM_I2C.h>
 
-// モードの名前とその表示
+// モードの名前とその表示   GLOVAL
 enum Modes{Manual, Timer, Continuous};
 const char ModeNames[3]={'M','T','C'};
-
-//  センサ長の最大値、最小値（setterでのリミットに使用）
-constexpr uint16_t SENSOR_LENGTH_MIN = 6;
-constexpr uint16_t SENSOR_LENGTH_MAX = 24;
-
-//  タイマー設定の最大値(setterでのリミットに使用)
-constexpr uint16_t TIMER_PERIOD_MAX = 5400; // [s]
-
-// FRAM ADDRESS:
-//  （予備）フラグ用の領域(256byte)
-constexpr uint16_t FRAM_FLAG_ADDR = 0x0000;
-
-//  パラメタを保存する領域(256byte) Meter_parameters構造体をそのまま保存
-constexpr uint16_t FRAM_PARM_ADDR = 0x0100;
-
-//  液面表示の最大値[0.1%]
-constexpr uint16_t LIQUID_LEVEL_UPPER_LIMIT = 1000;
 
 
 struct Meter_parameters{

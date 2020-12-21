@@ -6,6 +6,25 @@
 
 #include "eh900_class.h"
 
+namespace{
+    //  センサ長の最大値、最小値（setterでのリミットに使用）
+    constexpr uint16_t SENSOR_LENGTH_MIN = 6;
+    constexpr uint16_t SENSOR_LENGTH_MAX = 24;
+    //  液面の上限値[0.1%]
+    constexpr uint16_t LIQUID_LEVEL_UPPER_LIMIT = 1000;
+
+    //  タイマー設定の最大値(setterでのリミットに使用)
+    constexpr uint16_t TIMER_PERIOD_MAX = 5400; // [s]
+
+    // FRAM ADDRESS:
+    //  （予備）フラグ用の領域(256byte)
+    constexpr uint16_t FRAM_FLAG_ADDR = 0x0000;
+
+    //  パラメタを保存する領域(256byte) Meter_parameters構造体をそのまま保存
+    constexpr uint16_t FRAM_PARM_ADDR = 0x0100;
+}
+
+
 eh900::eh900(void){
 
     // eh900::init();
