@@ -1,6 +1,7 @@
 #include "display_class.h"
 
 namespace{
+    //  表示データとカーソル位置の定数
     constexpr uint16_t POSITION_BAR_GRAPH       = 10;
     constexpr uint16_t POSITION_SENSOR_LENGTH   = 1;
     constexpr uint16_t POSITION_TIMER_SET       = 5;
@@ -8,6 +9,7 @@ namespace{
     constexpr uint16_t POSITION_LEVEL           = 10;
     constexpr uint16_t POSITION_MODE            = 0;
 
+    //  バーグラフのためのCGデータ
     byte bar_graph[5][8] = {
         {
             0b10000,
@@ -63,15 +65,11 @@ namespace{
 
 }
 
-// LcdDisplay::LcdDisplay(const uint16_t* level){
-Eh_display::Eh_display(){
-
-}
+// constructor
+Eh_display::Eh_display(eh900* pModel) : LevelMeter(pModel) { }
 
 // initialize LCD display as 2 line, 16 column.
-void Eh_display::init(eh900* pModel, uint16_t error){
-    
-    pMeter = pModel;
+void Eh_display::init(uint16_t error){
 
     rgb_lcd::begin(16,2);
 
@@ -95,16 +93,15 @@ void Eh_display::showMeter(void){
         rgb_lcd::print(" :  /   E:    :F");
 
         rgb_lcd::setCursor(POSITION_TIMER_SET,0);
-        rgb_lcd::print(right_align(String( pMeter->getTimerPeriod() / 60 ), 2));
+        rgb_lcd::print(right_align(String( LevelMeter->getTimerPeriod() / 60 ), 2));
 
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
-        rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
+        rgb_lcd::print(right_align(String( LevelMeter->getSensorLength() ), 2));
         rgb_lcd::print("inch   ");
 }
 
 void Eh_display::showLevel(void){
-    
-    uint16_t value = pMeter->getLiquidLevel();
+    uint16_t value = LevelMeter->getLiquidLevel();
 
     rgb_lcd::setCursor(POSITION_LEVEL, 1);
     rgb_lcd::print(right_align(String((float)value/10.0,1),5));
@@ -131,12 +128,12 @@ void Eh_display::showLevel(void){
     };
 
     //  センサエラー表示
-    if(pMeter->isSensorError()){
+    if(LevelMeter->isSensorError()){
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
         rgb_lcd::print("-ERROR-");
     } else {
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
-        rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
+        rgb_lcd::print(right_align(String( LevelMeter->getSensorLength() ), 2));
         rgb_lcd::print("inch   ");
     }
     
@@ -147,16 +144,16 @@ void Eh_display::showMode(void){
     rgb_lcd::setCursor(POSITION_MODE,0);
 
     // 連続モードの時にフラッシュする   1sec周期でブリンク
-    if ( ( pMeter->getMode() == Continuous ) && ( millis()%1000 < 500 )){
+    if ( ( LevelMeter->getMode() == Continuous ) && ( millis()%1000 < 500 )){
         rgb_lcd::print(" ");
     } else {
-        rgb_lcd::print(ModeNames[pMeter->getMode()]);
+        rgb_lcd::print(ModeNames[LevelMeter->getMode()]);
     }      
 
     // タイマーモードの時のtick-tock 
     rgb_lcd::setCursor(POSITION_MODE+1,0);
     // 2sec周期でブリンク
-    if ( ( pMeter->getMode() == Timer ) && ( millis()%2000 < 1000 )){
+    if ( ( LevelMeter->getMode() == Timer ) && ( millis()%2000 < 1000 )){
         rgb_lcd::write(" ");
     } else {
         rgb_lcd::write(":");
@@ -166,7 +163,7 @@ void Eh_display::showMode(void){
 
 void Eh_display::showTimer(void){
     rgb_lcd::setCursor(POSITION_TIMER_COUNT,0);
-    rgb_lcd::print(right_align(String(pMeter->getTimerElasped() / 60),2));
+    rgb_lcd::print(right_align(String(LevelMeter->getTimerElasped() / 60),2));
 
 }
 

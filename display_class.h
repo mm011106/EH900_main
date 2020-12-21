@@ -8,12 +8,11 @@ class Eh_display : public rgb_lcd {
 
     public:
         // コンストラクタ  
-
-        Eh_display();
+        Eh_display(eh900* pModel);
         
         //  LCDのイニシャライズ  液面計オブジェクトを渡す
         //      error が0以外ならエラーを表示する
-        void init(eh900* pModel,uint16_t error);
+        void init(uint16_t error);
 
         //  液面計の表示に設定する
         void showMeter(void);
@@ -31,7 +30,7 @@ class Eh_display : public rgb_lcd {
         void flashDisplay(void);
 
     private:
-        eh900* pMeter;
+        eh900* LevelMeter;
 
 };
 
