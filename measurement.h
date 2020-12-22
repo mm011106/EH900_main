@@ -13,38 +13,36 @@
 
 
 /*!
- * @brief Class that stores state and functions for controlling measuement unit
+ * @brief Class that stores state and functions for controlling measuement module
  * 
  */
-
 class Measurement {
 
     public:
-        Measurement(eh900* pModel);
 
-        // 計測モジュールのイニシャライズ
-        //      液面計のパラメタが引数として必要
+        Measurement(eh900* pModel) : LevelMeter(pModel) {}
+
+        ~Measurement(){
+            Serial.println("~ Mesasurement ----");
+        }
+    //  初期化
+    
         boolean init(void);
 
     //  電流源制御
-        // 電流源   ON  電流源が正常かどうかを返す(正常=true)
+ 
         boolean currentOn(void);
-        // 電流源   OFF
         void currentOff(void);
-        //  電流源を設定する  デフォルト：75mA  範囲：67mA〜83mA  [/0.1mA]
         void setCurrent(uint16_t current = 750);
-
-        // 電流源が動作中かどうかチェックする   動作している=ture
         boolean getStatus(void);
 
     //  計測
-        //液面を1回計測する   熱伝導速度も考慮に入れて時間待ちする 
-        boolean measSingle(void);
 
-        // 電流・電圧を計測して、センサ長で指定された規定のインピーダンスに対して何%なのかを0.1%単位で計算
+        boolean measSingle(void);
         void readLevel(void);
 
-        //  アナログレベルモニタ出力設定 [0.1%]
+    //  モニタ出力制御
+    
         void setVmon(uint16_t);
 
     private:
@@ -61,6 +59,7 @@ class Measurement {
         eh900* LevelMeter;
 
         //  電圧・電流値の読み取り
+
         uint32_t read_voltage(void);
         uint32_t read_current(void);
 

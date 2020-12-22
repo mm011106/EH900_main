@@ -50,8 +50,11 @@ namespace{
     constexpr uint16_t DAC_COUNT_PER_VOLT = 1241;
 }
 
-Measurement::Measurement(eh900* pModel) : LevelMeter(pModel) {}
-
+// Measurement::Measurement(eh900* pModel) : LevelMeter(pModel) {}
+/*!
+ * @brief 計測モジュールの初期化
+ * @returns True：全てのデバイスが初期化された False：初期化できないデバイスがあった
+ */
 boolean Measurement::init(void){
     boolean f_init_succeed = true;
     boolean status = false;
@@ -120,7 +123,10 @@ boolean Measurement::init(void){
     return f_init_succeed;
 
 }
-
+/*!
+ * @brief 電流源をOnにする
+ * @returns True 負荷に異常なしでOnできた, False 負荷に異常がありOnできなかった
+ */
 boolean Measurement::currentOn(void){
 
     Serial.print("currentCtrl:ON -- "); 
@@ -141,12 +147,21 @@ boolean Measurement::currentOn(void){
     return !f_sensor_error;
 }
 
+/*!
+ * @brief 電流源をOffにする
+ */
 void Measurement::currentOff(void){
     Serial.print("currentCtrl:OFF  -- ");
     pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_OFF);      
     Serial.println(" Fin. --");
 }
 
+/*!
+ * @brief 電流源の電流値を設定する
+ * @param current current in [0.1milliAmp]
+ *          設定値は67mA〜83mAの範囲：デフォルト75mA
+ * 
+ */
 void Measurement::setCurrent(uint16_t current){  // current in [0.1milliAmp]
 
     Serial.print("currentSet: -- "); 
@@ -159,13 +174,21 @@ void Measurement::setCurrent(uint16_t current){  // current in [0.1milliAmp]
     Serial.println("Fin. --" ); 
 }
 
+/*!
+ * @brief 電流源のステータスを返す
+ * @returns True: 電流Onの設定で正常に電流を供給している, False:電流がoff もしくは 負荷異常
+ */
 boolean Measurement::getStatus(void){
     return (   (pio.digitalRead(PIO_CURRENT_ENABLE)==CURRENT_ON)    \
             && (pio.digitalRead(PIO_CURRENT_ERRFLAG) == HIGH)        \
     );
 
 }
-
+/*!
+ * @brief 液面計測を1回行う.
+ *          熱伝導速度も考慮して時間待ちする.
+ * @returns True:正常に終了, False:電流源が動作せず計測不可
+ */
 boolean Measurement::measSingle(void){
     
     // boolean flag = false;
@@ -194,6 +217,10 @@ boolean Measurement::measSingle(void){
     return !f_sensor_error;
 }
 
+/*!
+ * @brief 液面を計測し結果を保存
+ * 電流のon/offは感知しない 
+ */
 void Measurement::readLevel(void){
     // uint32_t vout = Measurement::read_voltage(); // [micro Volt]
     uint32_t iout = Measurement::read_current(); // [micro Amp]
@@ -214,8 +241,11 @@ void Measurement::readLevel(void){
     LevelMeter->setLiquidLevel(result);
 
 }
-
-uint32_t Measurement::read_voltage(void){  // return measured voltage of sensor in [microVolt]
+/*!
+ * @brief センサの電圧を計測する
+ * @returns 計測した電圧    [microVolt]
+ */
+uint32_t Measurement::read_voltage(void){  
 
     float results = 0.0;
     float readout = 0.0;
@@ -258,6 +288,10 @@ uint32_t Measurement::read_voltage(void){  // return measured voltage of sensor 
     return round(results);
 }
 
+/*!
+ * @brief センサに流れている電流を計測
+ * @returns 計測した電流    [microAmp]
+ */
 uint32_t Measurement::read_current(void){  // return measured current in [microAmp]
 
     float results = 0.0;
@@ -296,8 +330,10 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
     
   return round(results);
 }
-
-//  アナログレベルモニタ出力設定 [0.1%]
+/*!
+ * @brief アナログモニタ出力の電圧を設定する(100%=1V)
+ * @param value 液面 [0.1%]    上限：100.0%
+ */
 void Measurement::setVmon(uint16_t value){
     uint16_t da_value=0;
 
