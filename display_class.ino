@@ -68,6 +68,8 @@ namespace{
 // constructor
 Eh_display::Eh_display(eh900* pModel) : LevelMeter(pModel) { }
 
+
+
 // initialize LCD display as 2 line, 16 column.
 void Eh_display::init(uint16_t error){
 
@@ -174,8 +176,13 @@ void Eh_display::flashDisplay(void){
     rgb_lcd::display();
     delay(interval);
 }
-
-String right_align(String num_in_string, uint16_t digit){
+/*!
+ * @brief 文字列を指定された桁数の右詰にする
+ * @param num_in_string 文字列
+ * @param digit 桁数
+ * @returns 右詰にされた文字列
+ */
+String right_align(const String num_in_string, const uint16_t digit){
 
     String right_aligned="";
     String pad="";

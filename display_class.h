@@ -10,6 +10,10 @@ class Eh_display : public rgb_lcd {
         // コンストラクタ  
         Eh_display(eh900* pModel);
         
+        ~Eh_display(){
+            Serial.println("~ Eh_display ----");
+        }
+        
         //  LCDのイニシャライズ  液面計オブジェクトを渡す
         //      error が0以外ならエラーを表示する
         void init(uint16_t error);
