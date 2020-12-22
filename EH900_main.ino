@@ -29,6 +29,7 @@ Eh_display lcd_display(&level_meter);
 
 Switch meas_sw(MEAS_SWITCH);
 
+
 //  手動計測時の表示アップデート用タイマ
 HardwareTimer* disp_update_timer = new HardwareTimer(TIM1);
 
@@ -83,14 +84,17 @@ void setup() {
     Serial.print("size of meas_unit:"); Serial.println(sizeof(meas_uint));
     Serial.println(system_error);
 
+    //  画面初期化  型名の表示・エラー表示
+    Serial.println("Disp : "); 
+    if (!lcd_display.init(system_error)){
+        Serial.println("  Disp init error.");
+        system_error |= 4;
+    };
+
     if (DEBUG){ 
         Serial.println("DEBUG MODE!!!");
         system_error = 0;
     };
-
-    //  画面初期化  型名の表示・エラー表示
-    Serial.println("Disp : "); 
-    lcd_display.init(system_error);
 
     //  メモリか測定ユニットにエラーがあれば起動しない。
     while(system_error != 0){
