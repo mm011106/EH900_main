@@ -43,7 +43,6 @@ boolean f_timer_timeup=false;   //  計測タイマー用フラグ
 
 void setup() {
     
-  // initialize digital pin LED_BUILTIN as an output.
     Serial.begin(115200);
     Serial.println("INIT:--");
 
