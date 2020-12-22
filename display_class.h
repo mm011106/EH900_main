@@ -34,7 +34,7 @@ class Eh_display : public rgb_lcd {
         void flashDisplay(void);
 
     private:
-        eh900* LevelMeter;
+        eh900* LevelMeter = nullptr;
 
 };
 

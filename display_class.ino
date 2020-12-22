@@ -66,12 +66,13 @@ namespace{
 }
 
 // constructor
-Eh_display::Eh_display(eh900* pModel) : LevelMeter(pModel) { }
-
-
+Eh_display::Eh_display(eh900* pModel) : LevelMeter(pModel) {
+    if (!LevelMeter){ Serial.println("Eh_display::int Parameter is null.");}
+ }
 
 // initialize LCD display as 2 line, 16 column.
 void Eh_display::init(uint16_t error){
+
 
     rgb_lcd::begin(16,2);
 
