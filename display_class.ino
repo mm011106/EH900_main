@@ -65,14 +65,24 @@ namespace{
 
 }
 
-// constructor
+/*! 
+    @brief  コンストラクタ
+    @param pModel eh900型のインスタンスのポインタ（表示するパラメタの参照用）
+*/
 Eh_display::Eh_display(eh900* pModel) : LevelMeter(pModel) {
-    if (!LevelMeter){ Serial.println("Eh_display::int Parameter is null.");}
  }
 
-// initialize LCD display as 2 line, 16 column.
-void Eh_display::init(uint16_t error){
+/*! 
+    @brief  LCDイニシャライズ、スプラッシュ表示、エラー表示
+    @param error エラーコード（エラー表示のため）
+    @return True:正常終了   False:パラメタ参照用のeh900型変数が未定義
+*/
+boolean Eh_display::init(uint16_t error){
 
+    if (!LevelMeter){
+        Serial.println("Eh_display::int Parameter is null.");
+        return false;
+    }
 
     rgb_lcd::begin(16,2);
 
@@ -89,8 +99,12 @@ void Eh_display::init(uint16_t error){
         rgb_lcd::print("INIT ERR:");
         rgb_lcd::print(right_align(String( error ), 2));
     }
+    return true;
 }
 
+/*!
+    @brief  メータの基本フォーマットを表示
+*/
 void Eh_display::showMeter(void){
         rgb_lcd::setCursor(0, 0);
         rgb_lcd::print(" :  /   E:    :F");
@@ -103,6 +117,9 @@ void Eh_display::showMeter(void){
         rgb_lcd::print("inch   ");
 }
 
+/*!
+    @brief  液面の表示（数値・バーグラフ）、センサエラーの表示
+*/
 void Eh_display::showLevel(void){
     uint16_t value = LevelMeter->getLiquidLevel();
 
@@ -141,7 +158,10 @@ void Eh_display::showLevel(void){
     }
     
 }
-
+/*!
+    @brief  モードの表示、セミコロンおよびモード表示のフラッシュ含む
+    @details 比較的短い周期（100ms程度）で周期的に呼ぶことでスムースに表示
+*/
 void Eh_display::showMode(void){
 
     rgb_lcd::setCursor(POSITION_MODE,0);
@@ -156,7 +176,7 @@ void Eh_display::showMode(void){
     // タイマーモードの時のtick-tock 
     rgb_lcd::setCursor(POSITION_MODE+1,0);
     // 2sec周期でブリンク
-    if ( ( LevelMeter->getMode() == Timer ) && ( millis()%2000 < 1000 )){
+    if ( ( LevelMeter->getMode() == Timer ) && ( millis()%2000 < 1000 ) && !(LevelMeter->getTimerPeriod()==0)){
         rgb_lcd::write(" ");
     } else {
         rgb_lcd::write(":");
@@ -164,12 +184,18 @@ void Eh_display::showMode(void){
 
 }
 
+/*!
+    @brief  タイマーの時間経過を表示
+*/
 void Eh_display::showTimer(void){
     rgb_lcd::setCursor(POSITION_TIMER_COUNT,0);
     rgb_lcd::print(right_align(String(LevelMeter->getTimerElasped() / 60),2));
 
 }
 
+/*!
+    @brief  ディスプレイ全体をブリンクさせる．300msかかる
+*/
 void Eh_display::flashDisplay(void){
     constexpr uint16_t interval = 200;
     rgb_lcd::noDisplay();
