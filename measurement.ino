@@ -56,6 +56,12 @@ namespace{
  * @returns True：全てのデバイスが初期化された False：初期化できないデバイスがあった
  */
 boolean Measurement::init(void){
+
+    if (!LevelMeter){
+        Serial.println("Measurement::init Parameter is null.");
+        return false;
+    }
+
     boolean f_init_succeed = true;
     boolean status = false;
 
@@ -81,7 +87,13 @@ boolean Measurement::init(void){
 
 
     // 電流源設定用DAC  初期化
-    status = current_adj_dac.begin(I2C_ADDR_CURRENT_ADJ, &Wire);
+    if(current_adj_dac){
+        delete current_adj_dac;
+    }
+
+    current_adj_dac = new Adafruit_MCP4725;
+
+    status = current_adj_dac->begin(I2C_ADDR_CURRENT_ADJ, &Wire);
     if (!status) { 
         Serial.println("error on Current Sorce DAC.  ");
         f_init_succeed = false;
@@ -91,7 +103,13 @@ boolean Measurement::init(void){
     }
 
     // アナログモニタ用DAC  初期化
-    status = v_mon_dac.begin(I2C_ADDR_V_MON, &Wire);
+    if(v_mon_dac){
+        delete v_mon_dac;
+    }
+
+    v_mon_dac = new Adafruit_MCP4725;
+
+    status = v_mon_dac->begin(I2C_ADDR_V_MON, &Wire);
     if (!status) { 
         Serial.println("error on Analog Monitor DAC.  ");
         f_init_succeed = false;
@@ -101,22 +119,33 @@ boolean Measurement::init(void){
     }
 
     //  PIOポート設定
-    status = pio.begin();      // use default address 0x20
+    if(pio){
+        delete pio;
+    }
+
+    pio = new Adafruit_MCP23008;
+
+    status = pio->begin();      // use default address 0x20
     if (!status) { 
         Serial.println("error on PIO.  ");
         f_init_succeed = false;
     } else {
         //  set IO port 
-        pio.pinMode(PIO_CURRENT_ERRFLAG, INPUT);
-        pio.pullUp(PIO_CURRENT_ERRFLAG, HIGH);  // turn on a 100K pullup internally
+        pio->pinMode(PIO_CURRENT_ERRFLAG, INPUT);
+        pio->pullUp(PIO_CURRENT_ERRFLAG, HIGH);  // turn on a 100K pullup internally
 
-        pio.pinMode(PIO_CURRENT_ENABLE, OUTPUT);
-        pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_OFF);
+        pio->pinMode(PIO_CURRENT_ENABLE, OUTPUT);
+        pio->digitalWrite(PIO_CURRENT_ENABLE, CURRENT_OFF);
     }
 
     //  ADコンバータ設定    PGA=x2   2.048V FS
-    adconverter.begin();
-    adconverter.setGain(GAIN_TWO); 
+    if(adconverter){
+        delete adconverter;
+    }
+
+    adconverter = new Adafruit_ADS1115(I2C_ADDR_ADC);
+    adconverter->begin();
+    adconverter->setGain(GAIN_TWO); 
 
     Serial.println("Measurement::init  Fin. --"); 
 
@@ -130,12 +159,12 @@ boolean Measurement::init(void){
 boolean Measurement::currentOn(void){
 
     Serial.print("currentCtrl:ON -- "); 
-    pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);
+    pio->digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);
     delay(10); // エラー判定が可能になるまで10ms待つ
 
-    if (pio.digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
+    if (pio->digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
         f_sensor_error = true;
-        pio.digitalWrite(PIO_CURRENT_ENABLE,CURRENT_OFF);
+        pio->digitalWrite(PIO_CURRENT_ENABLE,CURRENT_OFF);
         Serial.print(" FAIL.  ");
     } else {
         f_sensor_error = false;
@@ -152,7 +181,7 @@ boolean Measurement::currentOn(void){
  */
 void Measurement::currentOff(void){
     Serial.print("currentCtrl:OFF  -- ");
-    pio.digitalWrite(PIO_CURRENT_ENABLE, CURRENT_OFF);      
+    pio->digitalWrite(PIO_CURRENT_ENABLE, CURRENT_OFF);      
     Serial.println(" Fin. --");
 }
 
@@ -168,7 +197,7 @@ void Measurement::setCurrent(uint16_t current){  // current in [0.1milliAmp]
     if ( 670 < current && current < 830){
         uint16_t value = (( current - 666 ) * DAC_COUNT_PER_VOLT) / CURRENT_SORCE_VI_COEFF;
         // current -> vref converting function
-        current_adj_dac.setVoltage(value, false);
+        current_adj_dac->setVoltage(value, false);
         Serial.print(" DAC changed. " ); 
       }
     Serial.println("Fin. --" ); 
@@ -179,8 +208,8 @@ void Measurement::setCurrent(uint16_t current){  // current in [0.1milliAmp]
  * @returns True: 電流Onの設定で正常に電流を供給している, False:電流がoff もしくは 負荷異常
  */
 boolean Measurement::getStatus(void){
-    return (   (pio.digitalRead(PIO_CURRENT_ENABLE)==CURRENT_ON)    \
-            && (pio.digitalRead(PIO_CURRENT_ERRFLAG) == HIGH)        \
+    return (   (pio->digitalRead(PIO_CURRENT_ENABLE)==CURRENT_ON)    \
+            && (pio->digitalRead(PIO_CURRENT_ERRFLAG) == HIGH)        \
     );
 
 }
@@ -255,14 +284,14 @@ uint32_t Measurement::read_voltage(void){
 
     for (uint16_t i = 0; i < avg; i++){
     //   results += (float)adconverter.readADC_Differential_0_1();
-        readout = (float)(adconverter.readADC_Differential_0_1() - LevelMeter->getAdcOfsComp01());
+        readout = (float)(adconverter->readADC_Differential_0_1() - LevelMeter->getAdcOfsComp01());
         Serial.print(", "); Serial.print(readout);  
         results += readout;
     }
 
 //    uint16_t gain_setting = ads.getGain();
     float adc_gain_coeff=0.0;
-    switch (adconverter.getGain()){
+    switch (adconverter->getGain()){
         case GAIN_TWOTHIRDS:
             adc_gain_coeff = ADC_READOUT_VOLTAGE_COEFF_GAIN_TWOTHIRDS;
         break;
@@ -301,13 +330,13 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
     Serial.print("Current Meas: read_voltage(2-3): ");
 
     for (uint16_t i = 0; i < avg; i++){
-        readout = (float)(adconverter.readADC_Differential_2_3() - LevelMeter->getAdcOfsComp23());
+        readout = (float)(adconverter->readADC_Differential_2_3() - LevelMeter->getAdcOfsComp23());
         Serial.print(", "); Serial.print(readout);  
         results += readout;
     }
 
     float adc_gain_coeff=0.0;
-    switch (adconverter.getGain()){
+    switch (adconverter->getGain()){
       case GAIN_TWOTHIRDS:
         adc_gain_coeff = ADC_READOUT_VOLTAGE_COEFF_GAIN_TWOTHIRDS;
         break;
@@ -341,7 +370,7 @@ void Measurement::setVmon(uint16_t value){
     if (value <= 1000) {
         da_value = ( DAC_COUNT_PER_VOLT * value ) / 1000;
     //     100.0% = 1V
-        v_mon_dac.setVoltage(da_value, false);
+        v_mon_dac->setVoltage(da_value, false);
     }
 
 }

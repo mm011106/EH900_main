@@ -20,7 +20,9 @@ class Measurement {
 
     public:
 
-        Measurement(eh900* pModel) : LevelMeter(pModel) {}
+        Measurement(eh900* pModel) : LevelMeter(pModel) {
+ 
+        }
 
         ~Measurement(){
             Serial.println("~ Mesasurement ----");
@@ -47,16 +49,16 @@ class Measurement {
 
     private:
         //  電流設定用DAコンバータ
-        Adafruit_MCP4725    current_adj_dac;
+        Adafruit_MCP4725*    current_adj_dac = nullptr;
         //  アナログモニタ出力用DAコンバータ
-        Adafruit_MCP4725    v_mon_dac;
+        Adafruit_MCP4725*    v_mon_dac = nullptr;
         //  電流源制御用    GPIO
-        Adafruit_MCP23008   pio;
+        Adafruit_MCP23008*   pio = nullptr;
         //  電圧・電流読み取り用ADコンバータ
-        Adafruit_ADS1115    adconverter;
+        Adafruit_ADS1115*    adconverter = nullptr;
 
         //  液面計パラメタクラス
-        eh900* LevelMeter;
+        eh900* LevelMeter = nullptr;
 
         //  電圧・電流値の読み取り
 
