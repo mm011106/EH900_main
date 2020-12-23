@@ -26,6 +26,10 @@ class Measurement {
 
         ~Measurement(){
             Serial.println("~ Mesasurement ----");
+            if(current_adj_dac){ delete current_adj_dac; }
+            if(v_mon_dac){ delete v_mon_dac; }
+            if(pio){ delete pio; }
+            if(adconverter){ delete adconverter; }
         }
     //  初期化
     
