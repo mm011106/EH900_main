@@ -57,7 +57,7 @@ class eh900
         Meter_parameters eh_status = {};
 
         // 構造体の内容を保存するためのメモリのドライバ 
-        Adafruit_FRAM_I2C fram;
+        Adafruit_FRAM_I2C fram = Adafruit_FRAM_I2C();
 
         template <typename T> 
             void nvram_put(uint16_t idx, const T& t);

@@ -47,6 +47,10 @@ boolean eh900::init(void){
         Serial.println("I2C FRAM not identified ...");
 
     }
+
+    Serial.print("FRAM:"); Serial.print((uint32_t)&fram,HEX); Serial.print("/");Serial.println(sizeof(fram));
+    Serial.print("eh_status:"); Serial.print((uint32_t)&eh_status,HEX); Serial.print("/");Serial.println(sizeof(eh_status));
+    
     return initSucceed;
 }
 
