@@ -43,7 +43,6 @@ uint16_t system_error = 0;      //  起動時のエラーコード
 boolean f_timer_timeup=false;   //  計測タイマー用フラグ
 
 void setup() {
-    
     Serial.begin(115200);
     Serial.println("INIT:--");
 
@@ -69,11 +68,8 @@ void setup() {
         level_meter.setAdcOfsComp23(0);
         level_meter.setCurrentSetting(750);
     };
-
-    Serial.print("size of level_meter:"); Serial.println(sizeof(level_meter));
     Serial.println(system_error);
 
-    
     Serial.print("Meas. Unit : "); 
     if (meas_uint.init()){
         Serial.println(" -- OK ");
@@ -81,7 +77,6 @@ void setup() {
         Serial.println(" -- Fail..");
         system_error |= 2;
     };
-    Serial.print("size of meas_unit:"); Serial.println(sizeof(meas_uint));
     Serial.println(system_error);
 
     //  画面初期化  型名の表示・エラー表示
@@ -114,6 +109,14 @@ void setup() {
     tick_tock_timer -> refresh();
     tick_tock_timer -> attachInterrupt(isr_tick_tock);
 
+
+    Serial.print("Level Meter:"); Serial.print((uint32_t)&level_meter,HEX); Serial.print("/");Serial.println(sizeof(level_meter));
+    Serial.print("Meas Unit:"); Serial.print((uint32_t)&meas_uint,HEX); Serial.print("/");Serial.println(sizeof(meas_uint));
+    Serial.print("Meas_sw:"); Serial.print((uint32_t)&meas_sw,HEX); Serial.print("/");Serial.println(sizeof(meas_sw));
+    Serial.print("LCD-display:"); Serial.print((uint32_t)&lcd_display,HEX); Serial.print("/");Serial.println(sizeof(lcd_display));
+
+    iinfo(0);
+  
     Serial.println("");
     Serial.println("START : ---");
 
@@ -123,7 +126,8 @@ void setup() {
     //  この時点でスイッチが押されていれば設定モードへ移行
     if (meas_sw.isDepressed()){
         menu_main();
-        
+        iinfo(0);
+
         lcd_display.noDisplay();
         Serial.print("QUIT config: store parameters into FRAM...");
         level_meter.setTimerElasped(0);
@@ -302,28 +306,29 @@ void isr_warp_meas_sw(){    //  スイッチ操作のISR  スイッチクラス�
 void isr_disp_update(void){  // 液面表示アップデート用 ISR
     lcd_display.showLevel();
     Serial.print("@"); // means 'measureing'
+    if (DEBUG){ iinfo(1); };
 }
 
 void isr_tick_tock(void){   // 毎秒のタイマー ISR
     if (level_meter.incTimeElasped()) {
         f_timer_timeup = true;
     };
-    if (DEBUG){ iinfo(); };
+    if (DEBUG){ iinfo(1); };
 }
 
-void iinfo() {
+void iinfo(uint8_t mode) {
     char top = 't';
     uint32_t adr = (uint32_t)&top;
     uint8_t* tmp = (uint8_t*)malloc(1);
     uint32_t hadr = (uint32_t)tmp;
     free(tmp);
 
-//   // スタック領域先頭アドレスの表示
-//   Serial.print("Stack Top:"); Serial.println(adr,HEX);
-  
-//   // ヒープ領域先頭アドレスの表示
-//   Serial.print("Heap Top :"); Serial.println(hadr,HEX);
-
-//   // SRAM未使用領域の表示
+    if (mode==0){
+        Serial.print("Stack Top:"); Serial.println(adr,HEX);
+        
+        // ヒープ領域先頭アドレスの表示
+        Serial.print("Heap Top :"); Serial.println(hadr,HEX);
+        }
+  // SRAM未使用領域の表示
   Serial.print("SRAM Free:"); Serial.println(adr-hadr,DEC);
 }
