@@ -65,8 +65,6 @@ boolean Measurement::init(void){
     boolean f_init_succeed = true;
     boolean status = false;
 
-    Serial.print("Measurement::init  size of *LevelMeter"); Serial.println(sizeof(LevelMeter));
-
     Serial.print("Meas init -- "); 
     //  必要なパラメタの設定 LevelMeterから読み込む
     //      センサの抵抗値
@@ -125,7 +123,7 @@ boolean Measurement::init(void){
 
     pio = new Adafruit_MCP23008;
 
-    status = pio->begin();      // use default address 0x20
+    status = pio->begin(I2C_ADDR_PIO, &Wire); 
     if (!status) { 
         Serial.println("error on PIO.  ");
         f_init_succeed = false;
@@ -146,6 +144,12 @@ boolean Measurement::init(void){
     adconverter = new Adafruit_ADS1115(I2C_ADDR_ADC);
     adconverter->begin();
     adconverter->setGain(GAIN_TWO); 
+
+    Serial.print("DA-current:"); Serial.print((uint32_t)current_adj_dac,HEX); Serial.print("/");Serial.println(sizeof(*current_adj_dac));
+    Serial.print("DA-Vmon:"); Serial.print((uint32_t)v_mon_dac,HEX); Serial.print("/");Serial.println(sizeof(*v_mon_dac));
+    Serial.print("PIO:"); Serial.print((uint32_t)pio,HEX); Serial.print("/");Serial.println(sizeof(*pio));
+    Serial.print("ADC:"); Serial.print((uint32_t)adconverter,HEX); Serial.print("/");Serial.println(sizeof(*adconverter));
+    Serial.print("eh900:"); Serial.print((uint32_t)LevelMeter,HEX); Serial.print("/");Serial.println(sizeof(*LevelMeter));
 
     Serial.println("Measurement::init  Fin. --"); 
 
