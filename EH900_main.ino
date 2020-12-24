@@ -310,10 +310,16 @@ void isr_disp_update(void){  // 液面表示アップデート用 ISR
 }
 
 void isr_tick_tock(void){   // 毎秒のタイマー ISR
+    if (DEBUG){ iinfo(1); };
+
+    //  タイマ設定が0ならカウントしない：タイマでは計測しない
+    if (level_meter.getTimerPeriod() == 0){
+        return;
+    }
+
     if (level_meter.incTimeElasped()) {
         f_timer_timeup = true;
     };
-    if (DEBUG){ iinfo(1); };
 }
 
 void iinfo(uint8_t mode) {
