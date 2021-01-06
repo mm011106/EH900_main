@@ -74,6 +74,7 @@ class eh900
         
         boolean init(void);
         boolean storeParameter(void);
+        boolean recallParameter(void);
 
         //  センサ長を返す[inch]
         uint16_t getSensorLength(void) const {

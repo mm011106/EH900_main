@@ -65,16 +65,19 @@ boolean Measurement::init(void){
     boolean f_init_succeed = true;
     boolean status = false;
 
-    Serial.print("Meas init -- "); 
-    //  必要なパラメタの設定 LevelMeterから読み込む
-    //      センサの抵抗値
-    sensor_resistance = 11.6 * (float)LevelMeter->getSensorLength();
-    //      センサ長に応じた計測待ち時間[ms]を設定   マージンとして1.2倍
-    delay_time = LevelMeter->getSensorLength() * (uint16_t)(1/HEAT_PROPERGATION_VEROCITY * 1000.0 * 1.2);
+    Serial.print("Meas init -- ");
+
+    // //  必要なパラメタの設定 LevelMeterから読み込む
+    Measurement::renew_sensor_parameter();
+
+    // //      センサの抵抗値
+    // sensor_resistance = 11.6 * (float)LevelMeter->getSensorLength();
+    // //      センサ長に応じた計測待ち時間[ms]を設定   マージンとして1.2倍
+    // delay_time = LevelMeter->getSensorLength() * (uint16_t)(1/HEAT_PROPERGATION_VEROCITY * 1000.0 * 1.2);
     
-    Serial.print("Sensor Length:"); Serial.println(LevelMeter->getSensorLength());
-    Serial.print("Delay Time:"); Serial.println(delay_time);
-    Serial.print("Sensor R:"); Serial.println(sensor_resistance);
+    // Serial.print("Sensor Length:"); Serial.println(LevelMeter->getSensorLength());
+    // Serial.print("Delay Time:"); Serial.println(delay_time);
+    // Serial.print("Sensor R:"); Serial.println(sensor_resistance);
 
     Serial.print("AD Error Comp 01: "); Serial.println(LevelMeter->getAdcErrComp01()*100);
     Serial.print("AD Error Comp 23: "); Serial.println(LevelMeter->getAdcErrComp23()*100);
@@ -156,6 +159,26 @@ boolean Measurement::init(void){
     return f_init_succeed;
 
 }
+
+/*!
+ * @brief センサ長の設定に基づき、抵抗値やディレイを設定する
+ * 
+ */
+void Measurement::renew_sensor_parameter(void){
+
+    //      センサの抵抗値
+    sensor_resistance = 11.6 * (float)LevelMeter->getSensorLength();
+
+    //      センサ長に応じた計測待ち時間[ms]を設定   マージンとして1.2倍
+    delay_time = LevelMeter->getSensorLength() * (uint16_t)(1/HEAT_PROPERGATION_VEROCITY * 1000.0 * 1.2);
+    
+    Serial.print("Sensor Length:"); Serial.println(LevelMeter->getSensorLength());
+    Serial.print("Delay Time:"); Serial.println(delay_time);
+    Serial.print("Sensor R:"); Serial.println(sensor_resistance);
+
+
+}
+
 /*!
  * @brief 電流源をOnにする
  * @returns True 負荷に異常なしでOnできた, False 負荷に異常がありOnできなかった
@@ -165,7 +188,10 @@ boolean Measurement::currentOn(void){
     Serial.print("currentCtrl:ON -- "); 
     pio->digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);
     delay(10); // エラー判定が可能になるまで10ms待つ
-
+    //dummy read
+    pio->digitalRead(PIO_CURRENT_ERRFLAG);
+    pio->digitalRead(PIO_CURRENT_ERRFLAG);
+    
     if (pio->digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
         f_sensor_error = true;
         pio->digitalWrite(PIO_CURRENT_ENABLE,CURRENT_OFF);

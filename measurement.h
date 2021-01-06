@@ -34,6 +34,7 @@ class Measurement {
     //  初期化
     
         boolean init(void);
+        void renew_sensor_parameter(void);
 
     //  電流源制御
  

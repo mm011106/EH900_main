@@ -65,6 +65,16 @@ boolean eh900::storeParameter(void){
 }
 
 /*!
+ *    @brief  液面計の設定パラメタをFRAMから読み出し
+ *    @return つねにTrue
+ */
+boolean eh900::recallParameter(void){
+
+    nvram_get(FRAM_PARM_ADDR, eh_status);
+    return true;
+}
+
+/*!
  *    @brief  センサ長を設定する
  *    @param  value センサ長[inch]：
  *              センサ長はSENSOR_LENGTH_MAX から SENSOR_LENGTH_MIN に制限される
