@@ -188,9 +188,6 @@ boolean Measurement::currentOn(void){
     Serial.print("currentCtrl:ON -- "); 
     pio->digitalWrite(PIO_CURRENT_ENABLE, CURRENT_ON);
     delay(10); // エラー判定が可能になるまで10ms待つ
-    //dummy read
-    pio->digitalRead(PIO_CURRENT_ERRFLAG);
-    pio->digitalRead(PIO_CURRENT_ERRFLAG);
     
     if (pio->digitalRead(PIO_CURRENT_ERRFLAG) == LOW){
         f_sensor_error = true;

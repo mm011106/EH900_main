@@ -159,36 +159,39 @@ void loop() {
     lcd_display.showMode();
     lcd_display.showTimer();
 
-    //  連続モードのときでスイッチが離されているとき
-    if (level_meter.getMode() == Continuous && meas_sw.isReleased()){
+    //  連続モードのとき
+    if (level_meter.getMode() == Continuous ){
 
-        //  タイマー動作をしないようにする
-        f_timer_timeup = false;
-        // DECIMATION 回ごとに1回計測  適度に調整
-        ++deci_counter;
-        // if ( (deci_counter == DECIMATION -1) && meas_unit.getStatus()){ 
-            // 電流源が動作していれば計測
-        
-        
-        if (deci_counter == DECIMATION -1 ){
-            Serial.print("-");
-            meas_unit.getStatus(); /// for debug
-            if (!DEBUG) {
+        // スイッチが離されていれば
+        if(meas_sw.isReleased()){
+            //  タイマー動作をしないようにする
+            f_timer_timeup = false;
+            // DECIMATION 回ごとに1回計測  適度に調整
+            ++deci_counter;
+            // if ( (deci_counter == DECIMATION -1) && meas_unit.getStatus()){ 
+                // 電流源が動作していれば計測
+            
+            
+            if (deci_counter == DECIMATION - 1 ){
+                Serial.print("-");
+
                 //  電流源の動作確認
                 if ( !meas_unit.getStatus() ){
                     //  動作していなければ
+                    meas_unit.currentOff();
                     digitalWrite(LED_BUILTIN, LOW);  
                     level_meter.setMode(Timer);
                     Serial.println("  Current Sorce Fail. Cont meas terminated...");
+                } else {
+                    //  1回計測、表示
+                    meas_unit.readLevel();
+                    lcd_display.showLevel();
+                    meas_unit.setVmon(level_meter.getLiquidLevel());
+                    deci_counter = 0;
                 }
             }
-            //  1回計測、表示
-            meas_unit.readLevel();
-            lcd_display.showLevel();
-            meas_unit.setVmon(level_meter.getLiquidLevel());
-            deci_counter = 0;
         }
-
+        
         if(meas_sw.hasDepressed() ){ // 連続計測モードでスイッチが押されたら
             //  連続計測モードからタイマーモードへ移行して、測定を終了する
             meas_unit.currentOff();
