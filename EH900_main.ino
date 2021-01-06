@@ -180,10 +180,13 @@ void loop() {
                     //  動作していなければ
                     meas_unit.currentOff();
                     digitalWrite(LED_BUILTIN, LOW);  
+                    level_meter.setSensorError();
+                    lcd_display.showLevel();
                     level_meter.setMode(Timer);
                     Serial.println("  Current Sorce Fail. Cont meas terminated...");
                 } else {
                     //  1回計測、表示
+                    level_meter.clearSensorError();
                     meas_unit.readLevel();
                     lcd_display.showLevel();
                     meas_unit.setVmon(level_meter.getLiquidLevel());
@@ -268,6 +271,8 @@ void loop() {
                         //  電流源にエラーがあればエラー表示してタイマーモードへ移行
                         level_meter.setSensorError();
                         level_meter.setMode(Timer);
+                    } else {
+                        level_meter.clearSensorError();
                     }
                 }
 
@@ -296,7 +301,11 @@ void dummy_meas_single(void){
     Serial.print("timer start.. ");
 
     disp_update_timer -> resume();//    表示リフレッシュ用タイマ動作開始
-    meas_unit.measSingle();
+    if (!meas_unit.measSingle()){
+        level_meter.setSensorError();
+    } else {
+        level_meter.clearSensorError();
+    }
     disp_update_timer -> pause();   //  表示リフレッシュ用タイマ動作終了
     disp_update_timer -> refresh(); //      同  リセット
 
