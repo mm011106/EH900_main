@@ -96,7 +96,7 @@ boolean Measurement::init(void){
 
     status = current_adj_dac->begin(I2C_ADDR_CURRENT_ADJ, &Wire);
     if (!status) { 
-        Serial.println("error on Current Sorce DAC.  ");
+        Serial.println("error on Current Source DAC.  ");
         f_init_succeed = false;
     } else {
         // 電流値設定
