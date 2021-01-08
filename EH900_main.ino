@@ -39,7 +39,7 @@ boolean f_tick_tock = false;
 
 uint16_t deci_counter = 0;      //  連続計測の時のループ回数カウント
 uint16_t system_error = 0;      //  起動時のエラーコード    
-                                //      0:ok 1:設定MEMORY 2:計測ユニット
+                                //      0:ok 1:設定MEMORY 2:計測ユニット 4:表示 
 boolean f_timer_timeup=false;   //  計測タイマー用フラグ
 
 void setup() {
@@ -51,7 +51,7 @@ void setup() {
     digitalWrite(D12,LOW);
 
     Serial.print("Switch : "); Serial.println(meas_sw.getPortID());
-    attachInterrupt(digitalPinToInterrupt(meas_sw.getPortID()), isr_warp_meas_sw , CHANGE);
+    attachInterrupt(digitalPinToInterrupt(meas_sw.getPortID()), isr_warpper_meas_sw , CHANGE);
 
     Serial.print("Memory : "); 
     if (level_meter.init()){
@@ -166,37 +166,35 @@ void loop() {
         if(meas_sw.isReleased()){
             //  タイマー動作をしないようにする
             f_timer_timeup = false;
-            // DECIMATION 回ごとに1回計測  適度に調整
             ++deci_counter;
-            // if ( (deci_counter == DECIMATION -1) && meas_unit.getStatus()){ 
-                // 電流源が動作していれば計測
-            
-            
+            // DECIMATION 回ごとに1回計測
             if (deci_counter == DECIMATION - 1 ){
                 Serial.print("-");
-
                 //  電流源の動作確認
-                if ( !meas_unit.getStatus() ){
-                    //  動作していなければ
-                    meas_unit.currentOff();
-                    digitalWrite(LED_BUILTIN, LOW);  
-                    level_meter.setSensorError();
-                    lcd_display.showLevel();
-                    level_meter.setMode(Timer);
-                    Serial.println("  Current Sorce Fail. Cont meas terminated...");
-                } else {
-                    //  1回計測、表示
+                if ( meas_unit.getStatus() ){
+                    //  動作していれば  1回計測、表示
                     level_meter.clearSensorError();
                     meas_unit.readLevel();
                     lcd_display.showLevel();
                     meas_unit.setVmon(level_meter.getLiquidLevel());
                     deci_counter = 0;
+                } else {
+                    //  動作していなければ計測をターミネート
+                    meas_unit.currentOff();
+                    digitalWrite(LED_BUILTIN, LOW);
+                    // エラー表示
+                    level_meter.setSensorError();
+                    lcd_display.showLevel();
+                    // タイマーモードに移行
+                    level_meter.setMode(Timer);
+                    Serial.println("  Current Sorce Fail. Cont meas terminated...");
                 }
             }
         }
         
-        if(meas_sw.hasDepressed() ){ // 連続計測モードでスイッチが押されたら
-            //  連続計測モードからタイマーモードへ移行して、測定を終了する
+        if(meas_sw.hasDepressed() ){
+            //  連続計測モードでスイッチが押されたら
+            //  タイマーモードへ移行して、測定を終了する
             meas_unit.currentOff();
             digitalWrite(LED_BUILTIN, LOW); 
             level_meter.setMode(Timer); 
@@ -215,7 +213,7 @@ void loop() {
         if (f_timer_timeup) {  //  タイムアップが起きれば計測する
             f_timer_timeup = false;
             Serial.print("Timer UP - ");
-            dummy_meas_single();
+            wrapper_meas_single();
             lcd_display.showLevel();
             meas_unit.setVmon(level_meter.getLiquidLevel());
         }
@@ -242,15 +240,15 @@ void loop() {
     if (meas_sw.hasReleased()){
         meas_sw.clearChangeStatus();
 
-        // if (DEBUG){
-            Serial.print(meas_sw.getDuration()); Serial.print(":");
-            Serial.println(ModeNames[level_meter.getMode()]);
-        // }
+        //  スイッチ状態のモニタ
+        // Serial.print(meas_sw.getDuration()); Serial.print(":");
+        // Serial.println(ModeNames[level_meter.getMode()]);
 
         switch (level_meter.getMode()){
             case Manual:    //1回計測を実行して完了
+
                 lcd_display.showMode();
-                dummy_meas_single();
+                wrapper_meas_single();
                 lcd_display.showLevel();
                 meas_unit.setVmon(level_meter.getLiquidLevel());
                 // 手動計測中にタイマがタイムアップした場合、それを無視する
@@ -261,19 +259,19 @@ void loop() {
                 break;
         
             case Continuous:    // 連続計測モードへ移行
+
                 Serial.print("Cont. Measureing... ");
                 digitalWrite(LED_BUILTIN, HIGH);
                 lcd_display.showMode();
-
-                if (!DEBUG){
-                    //  電流をon
-                    if ( !meas_unit.currentOn() ){ 
-                        //  電流源にエラーがあればエラー表示してタイマーモードへ移行
-                        level_meter.setSensorError();
-                        level_meter.setMode(Timer);
-                    } else {
-                        level_meter.clearSensorError();
-                    }
+                //  電流をon
+                if ( !meas_unit.currentOn() ){ 
+                    //  電流源にエラーがあればエラー表示してタイマーモードへ移行
+                    level_meter.setSensorError();
+                    lcd_display.showLevel();
+                    level_meter.setMode(Timer);
+                } else {
+                    level_meter.clearSensorError();
+                    lcd_display.showLevel();
                 }
 
                 break;
@@ -293,7 +291,8 @@ void loop() {
     delay(LOOP_WAIT);
 }
 
-void dummy_meas_single(void){
+//  1回計測 measurement::measSingleのラッパ
+void wrapper_meas_single(void){
     Serial.print("Single shot Measureing...");
     digitalWrite(LED_BUILTIN, HIGH);  // turn the LED
     lcd_display.showMode();
@@ -316,23 +315,26 @@ void dummy_meas_single(void){
     lcd_display.showMode();
 }
 
-void isr_warp_meas_sw(){    //  スイッチ操作のISR  スイッチクラスのラッパ 
+//  スイッチ操作のISR  スイッチクラスのラッパ 
+void isr_warpper_meas_sw(){    
     meas_sw.read_switch_status();
     Serial.print("!");
 }
 
-void isr_disp_update(void){  // 液面表示アップデート用 ISR
+// 液面表示アップデート用 ISR
+void isr_disp_update(void){  
     lcd_display.showLevel();
     Serial.print("@"); // means 'measureing'
     if (DEBUG){ iinfo(1); };
 }
 
-void isr_tick_tock(void){   // 毎秒のタイマー ISR
-    // if (DEBUG){
-         iinfo(1); 
-        //  };
+// 毎秒のタイマー ISR
+void isr_tick_tock(void){  
+    if (DEBUG){
+        iinfo(1); 
+    };
 
-    //  タイマ設定が0ならカウントしない：タイマでは計測しない
+    //  タイマ設定が0ならカウントしない：タイマ計測はしない
     if (level_meter.getTimerPeriod() == 0){
         return;
     }
@@ -342,6 +344,7 @@ void isr_tick_tock(void){   // 毎秒のタイマー ISR
     };
 }
 
+// メモリ利用状況の確認
 void iinfo(uint8_t mode) {
     char top = 't';
     uint32_t adr = (uint32_t)&top;
@@ -351,10 +354,8 @@ void iinfo(uint8_t mode) {
 
     if (mode==0){
         Serial.print("Stack Top:"); Serial.println(adr,HEX);
-        
-        // ヒープ領域先頭アドレスの表示
         Serial.print("Heap Top :"); Serial.println(hadr,HEX);
         }
-  // SRAM未使用領域の表示
-  Serial.print("SRAM Free:"); Serial.println(adr-hadr,DEC);
+    // SRAM未使用領域の表示
+    Serial.print("SRAM Free:"); Serial.println(adr-hadr,DEC);
 }
