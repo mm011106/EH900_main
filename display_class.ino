@@ -1,6 +1,7 @@
 #include "display_class.h"
 
 namespace{
+    //  表示データとカーソル位置の定数
     constexpr uint16_t POSITION_BAR_GRAPH       = 10;
     constexpr uint16_t POSITION_SENSOR_LENGTH   = 1;
     constexpr uint16_t POSITION_TIMER_SET       = 5;
@@ -8,6 +9,7 @@ namespace{
     constexpr uint16_t POSITION_LEVEL           = 10;
     constexpr uint16_t POSITION_MODE            = 0;
 
+    //  バーグラフのためのCGデータ
     byte bar_graph[5][8] = {
         {
             0b10000,
@@ -63,15 +65,24 @@ namespace{
 
 }
 
-// LcdDisplay::LcdDisplay(const uint16_t* level){
-Eh_display::Eh_display(){
+/*! 
+    @brief  コンストラクタ
+    @param pModel eh900型のインスタンスのポインタ（表示するパラメタの参照用）
+*/
+Eh_display::Eh_display(eh900* pModel) : LevelMeter(pModel) {
+ }
 
-}
+/*! 
+    @brief  LCDイニシャライズ、スプラッシュ表示、エラー表示
+    @param error エラーコード（エラー表示のため）
+    @return True:正常終了   False:パラメタ参照用のeh900型変数が未定義
+*/
+boolean Eh_display::init(uint16_t error){
 
-// initialize LCD display as 2 line, 16 column.
-void Eh_display::init(eh900* pModel, uint16_t error){
-    
-    pMeter = pModel;
+    if (!LevelMeter){
+        Serial.println("Eh_display::int Parameter is null.");
+        return false;
+    }
 
     rgb_lcd::begin(16,2);
 
@@ -88,23 +99,29 @@ void Eh_display::init(eh900* pModel, uint16_t error){
         rgb_lcd::print("INIT ERR:");
         rgb_lcd::print(right_align(String( error ), 2));
     }
+    return true;
 }
 
+/*!
+    @brief  メータの基本フォーマットを表示
+*/
 void Eh_display::showMeter(void){
         rgb_lcd::setCursor(0, 0);
         rgb_lcd::print(" :  /   E:    :F");
 
         rgb_lcd::setCursor(POSITION_TIMER_SET,0);
-        rgb_lcd::print(right_align(String( pMeter->getTimerPeriod() / 60 ), 2));
+        rgb_lcd::print(right_align(String( LevelMeter->getTimerPeriod() / 60 ), 2));
 
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
-        rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
+        rgb_lcd::print(right_align(String( LevelMeter->getSensorLength() ), 2));
         rgb_lcd::print("inch   ");
 }
 
+/*!
+    @brief  液面の表示（数値・バーグラフ）、センサエラーの表示
+*/
 void Eh_display::showLevel(void){
-    
-    uint16_t value = pMeter->getLiquidLevel();
+    uint16_t value = LevelMeter->getLiquidLevel();
 
     rgb_lcd::setCursor(POSITION_LEVEL, 1);
     rgb_lcd::print(right_align(String((float)value/10.0,1),5));
@@ -131,32 +148,35 @@ void Eh_display::showLevel(void){
     };
 
     //  センサエラー表示
-    if(pMeter->isSensorError()){
+    if(LevelMeter->isSensorError()){
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
         rgb_lcd::print("-ERROR-");
     } else {
         rgb_lcd::setCursor(POSITION_SENSOR_LENGTH,1);
-        rgb_lcd::print(right_align(String( pMeter->getSensorLength() ), 2));
+        rgb_lcd::print(right_align(String( LevelMeter->getSensorLength() ), 2));
         rgb_lcd::print("inch   ");
     }
     
 }
-
+/*!
+    @brief  モードの表示、セミコロンおよびモード表示のフラッシュ含む
+    @details 比較的短い周期（100ms程度）で周期的に呼ぶことでスムースに表示
+*/
 void Eh_display::showMode(void){
 
     rgb_lcd::setCursor(POSITION_MODE,0);
 
     // 連続モードの時にフラッシュする   1sec周期でブリンク
-    if ( ( pMeter->getMode() == Continuous ) && ( millis()%1000 < 500 )){
+    if ( ( LevelMeter->getMode() == Continuous ) && ( millis()%1000 < 500 )){
         rgb_lcd::print(" ");
     } else {
-        rgb_lcd::print(ModeNames[pMeter->getMode()]);
+        rgb_lcd::print(ModeNames[LevelMeter->getMode()]);
     }      
 
     // タイマーモードの時のtick-tock 
     rgb_lcd::setCursor(POSITION_MODE+1,0);
     // 2sec周期でブリンク
-    if ( ( pMeter->getMode() == Timer ) && ( millis()%2000 < 1000 )){
+    if ( ( LevelMeter->getMode() == Timer ) && ( millis()%2000 < 1000 ) && !(LevelMeter->getTimerPeriod()==0)){
         rgb_lcd::write(" ");
     } else {
         rgb_lcd::write(":");
@@ -164,12 +184,18 @@ void Eh_display::showMode(void){
 
 }
 
+/*!
+    @brief  タイマーの時間経過を表示
+*/
 void Eh_display::showTimer(void){
     rgb_lcd::setCursor(POSITION_TIMER_COUNT,0);
-    rgb_lcd::print(right_align(String(pMeter->getTimerElasped() / 60),2));
+    rgb_lcd::print(right_align(String(LevelMeter->getTimerElasped() / 60),2));
 
 }
 
+/*!
+    @brief  ディスプレイ全体をブリンクさせる．300msかかる
+*/
 void Eh_display::flashDisplay(void){
     constexpr uint16_t interval = 200;
     rgb_lcd::noDisplay();
@@ -177,8 +203,13 @@ void Eh_display::flashDisplay(void){
     rgb_lcd::display();
     delay(interval);
 }
-
-String right_align(String num_in_string, uint16_t digit){
+/*!
+ * @brief 文字列を指定された桁数の右詰にする
+ * @param num_in_string 文字列
+ * @param digit 桁数
+ * @returns 右詰にされた文字列
+ */
+String right_align(const String num_in_string, const uint16_t digit){
 
     String right_aligned="";
     String pad="";

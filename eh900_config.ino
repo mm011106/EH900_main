@@ -9,6 +9,16 @@
 
 #include "eh900_config.h"
 
+// namespace{
+//     //  センサ長の最大値、最小値（setterでのリミットに使用）
+//     constexpr uint16_t SENSOR_LENGTH_MIN = 6;
+//     constexpr uint16_t SENSOR_LENGTH_MAX = 24;
+//     //  液面の上限値[0.1%]
+//     constexpr uint16_t LIQUID_LEVEL_UPPER_LIMIT = 1000;
+
+//     //  タイマー設定の最大値(setterでのリミットに使用)
+//     constexpr uint16_t TIMER_PERIOD_MAX = 5400; // [s]
+// }
 
 /**
     @fn
@@ -186,7 +196,6 @@ void menu_sensor_length(void){
     
     @brief  タイマー周期の設定をする
             この関数内での時間の単位は[min.]で書き戻すときに[s]に変換している
-            設定値の上限はeh900_class.hで宣言されている
 */
 void menu_timer_period(void){
         

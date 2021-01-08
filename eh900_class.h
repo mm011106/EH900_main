@@ -3,26 +3,9 @@
 
 #include <Adafruit_FRAM_I2C.h>
 
-// モードの名前とその表示
+// モードの名前とその表示   GLOVAL
 enum Modes{Manual, Timer, Continuous};
 const char ModeNames[3]={'M','T','C'};
-
-//  センサ長の最大値、最小値（setterでのリミットに使用）
-constexpr uint16_t SENSOR_LENGTH_MIN = 6;
-constexpr uint16_t SENSOR_LENGTH_MAX = 24;
-
-//  タイマー設定の最大値(setterでのリミットに使用)
-constexpr uint16_t TIMER_PERIOD_MAX = 5400; // [s]
-
-// FRAM ADDRESS:
-//  （予備）フラグ用の領域(256byte)
-constexpr uint16_t FRAM_FLAG_ADDR = 0x0000;
-
-//  パラメタを保存する領域(256byte) Meter_parameters構造体をそのまま保存
-constexpr uint16_t FRAM_PARM_ADDR = 0x0100;
-
-//  液面表示の最大値[0.1%]
-constexpr uint16_t LIQUID_LEVEL_UPPER_LIMIT = 1000;
 
 
 struct Meter_parameters{
@@ -74,62 +57,57 @@ class eh900
         Meter_parameters eh_status = {};
 
         // 構造体の内容を保存するためのメモリのドライバ 
-        Adafruit_FRAM_I2C fram;
+        Adafruit_FRAM_I2C fram = Adafruit_FRAM_I2C();
 
-        //  FRAMに変数の値を書き込む
         template <typename T> 
-            const void nvram_put(uint16_t idx, const T& t);
+            void nvram_put(uint16_t idx, const T& t);
         
-        //  FRAMから変数に値を読み込む
         template <typename T> 
             void nvram_get(uint16_t, T&);
 
     public:
-        eh900(void);
+        eh900(void){};
+
+        ~eh900(){
+            Serial.println("~ eh900 ----");
+        }
         
-        // 液面計パラメタの初期化   FRAMから読み込んで設定
         boolean init(void);
-
-        // 設定されているパラメタ(eh_status)をFRAMに書き込む 
         boolean storeParameter(void);
+        boolean recallParameter(void);
 
-        // 設定されているセンサ長を返す[inch]
-        uint16_t getSensorLength(void){
+        //  センサ長を返す[inch]
+        uint16_t getSensorLength(void) const {
             return eh_status.sensor_length;
         };
 
-        //  センサ長を設定する[inch]
         void setSensorLength(uint16_t);
 
+    //タイマ設定
+    
         //  設定されているタイマ周期を返す[s]
-        uint16_t getTimerPeriod(void){
+        uint16_t getTimerPeriod(void) const {
             return eh_status.timer_period;
         };
 
-        //  タイマ周期を設定する    最大5400秒(90分） 0の時タイマ動作停止
         void setTimerPeriod(uint16_t);
 
-    //タイマ設定
         //  タイマの経過時間を返す
-        uint16_t getTimerElasped(void){
+        uint16_t getTimerElasped(void) const {
             return eh_status.timer_elasped;
         };
 
-        // タイマをインクリメント  timeupかどうかを返す true:timeUp
         boolean incTimeElasped(void);  
-
-        // タイマの経過時間を設定
         void setTimerElasped(uint16_t);
 
     // 液面データ
+
         //  液面レベルを返す[0.1%単位]
-        uint16_t getLiquidLevel(void){
+        uint16_t getLiquidLevel(void) const {
             return eh_status.liqud_level;
         };
         
-        //  液面レベルを設定[0.1%単位]
         void setLiquidLevel(uint16_t);
-
 
     //  モード
 
@@ -139,14 +117,14 @@ class eh900
         };
     
         //  現在のモード読み取り
-        Modes getMode(void){
+        Modes getMode(void) const {
             return eh_status.mode;
         };
         
     //  フラグ
 
         //  センサエラーかどうか
-        boolean isSensorError(void){
+        boolean isSensorError(void) const {
             return eh_status.f_sensor_error;
         };
     
@@ -165,7 +143,7 @@ class eh900
     //  計測ユニット用のデータ
 
         //  ADコンバータの補正係数を得る 電圧計測チャネル
-        float_t getAdcErrComp01(void){
+        float_t getAdcErrComp01(void) const {
             return eh_status.adc_err_comp_diff_0_1;
         };
 
@@ -177,7 +155,7 @@ class eh900
         };
 
         //  ADコンバータの補正係数を得る 電流計測チャネル
-        float_t getAdcErrComp23(void){
+        float_t getAdcErrComp23(void) const {
             return eh_status.adc_err_comp_diff_2_3;
         };
 
@@ -189,7 +167,7 @@ class eh900
         };
 
         //  ADコンバータのオフセット補正値を得る 電圧計測チャネル
-        int16_t getAdcOfsComp01(void){
+        int16_t getAdcOfsComp01(void) const {
             return eh_status.adc_OFS_comp_diff_0_1;
         };
 
@@ -201,7 +179,7 @@ class eh900
         };
 
         //  ADコンバータのオフセット補正値を得る 電流計測チャネル
-        int16_t getAdcOfsComp23(void){
+        int16_t getAdcOfsComp23(void) const {
             return eh_status.adc_OFS_comp_diff_2_3;
         };
 
@@ -213,7 +191,7 @@ class eh900
         };
 
         //  電流源設定値を得る  [0.1mA]
-        uint16_t getCurrentSetting(void){
+        uint16_t getCurrentSetting(void) const {
             return eh_status.current_set_default;
         };
 
