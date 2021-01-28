@@ -31,8 +31,11 @@ namespace{
 
 //  計測に使う定数
 namespace{
-    // 電流計測時の電流電圧変換係数(R=5kohm, Coeff_Isenosr=0.004の時) [/ V/A]
-    constexpr float CURRENT_MEASURE_COEFF = 20.075;
+    //  センサの単位長あたりのインピーダンス[ohm/inch]
+    constexpr float SENSOR_UNIT_IMP = 11.6;
+
+    // 電流計測時の電流電圧変換係数(R=5kohm, Coeff_Isenosr=0.004(0.2/50ohm)の時) [/ V/A]
+    constexpr float CURRENT_MEASURE_COEFF = 20.000;
 
     //  電圧計測のアッテネータ系数  1/10 x 2/5 の逆数  実際の抵抗値での計算
     constexpr float ATTENUATOR_COEFF = 24.6642;
@@ -167,7 +170,7 @@ boolean Measurement::init(void){
 void Measurement::renew_sensor_parameter(void){
 
     //      センサの抵抗値
-    sensor_resistance = 11.6 * (float)LevelMeter->getSensorLength();
+    sensor_resistance = SENSOR_UNIT_IMP * (float)LevelMeter->getSensorLength();
 
     //      センサ長に応じた計測待ち時間[ms]を設定   マージンとして1.2倍
     delay_time = LevelMeter->getSensorLength() * (uint16_t)(1/HEAT_PROPERGATION_VEROCITY * 1000.0 * 1.2);
