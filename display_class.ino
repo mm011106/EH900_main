@@ -164,12 +164,14 @@ void Eh_display::showLevel(void){
 */
 void Eh_display::showMode(void){
 
-    rgb_lcd::setCursor(POSITION_MODE,0);
+    // rgb_lcd::setCursor(POSITION_MODE,0);
 
     // 連続モードの時にフラッシュする   1sec周期でブリンク
     if ( ( LevelMeter->getMode() == Continuous ) && ( millis()%1000 < 500 )){
+        rgb_lcd::setCursor(POSITION_MODE,0);
         rgb_lcd::print(" ");
     } else {
+        rgb_lcd::setCursor(POSITION_MODE,0);
         rgb_lcd::print(ModeNames[LevelMeter->getMode()]);
     }      
 

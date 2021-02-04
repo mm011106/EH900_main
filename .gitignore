@@ -1,4 +1,5 @@
 .vscode
 *.BUP*
 *.code-workspace
+*.bin
 
