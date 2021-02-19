@@ -294,8 +294,8 @@ void Measurement::readLevel(void){
     } else { 
         Serial.print(" No current flow! ");
     }
-    
-    uint16_t result = round(( 1.0 - ratio) * 1000);  // [0.1%]
+    // センサの抵抗値誤差のマージンとして　2%　少な目に表示する
+    uint16_t result = round(( 1.0 - ratio*1.02) * 1000);  // [0.1%]
     Serial.print(" Level = "); Serial.println( result);
     LevelMeter->setLiquidLevel(result);
 
