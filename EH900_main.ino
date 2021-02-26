@@ -185,6 +185,7 @@ void loop() {
                     // エラー表示
                     level_meter.setSensorError();
                     lcd_display.showLevel();
+                    meas_unit.setVmon(level_meter.getLiquidLevel());
                     // タイマーモードに移行
                     level_meter.setMode(Timer);
                     Serial.println("  Current Sorce Fail. Cont meas terminated...");
