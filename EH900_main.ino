@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include <HardwareTimer.h>
+#include <HardwareSerial.h>
 
 #include "switch_class.h"
 #include "eh900_class.h"
@@ -29,6 +30,8 @@ Eh_display lcd_display(&level_meter);
 
 Switch meas_sw(MEAS_SWITCH);
 
+// #12
+HardwareSerial uart1(PA10, PA9);
 
 //  手動計測時の表示アップデート用タイマ
 HardwareTimer* disp_update_timer = new HardwareTimer(TIM1);
@@ -45,6 +48,9 @@ boolean f_timer_timeup=false;   //  計測タイマー用フラグ
 void setup() {
     Serial.begin(115200);
     Serial.println("INIT:--");
+    // #12 communication port for IoT gateway
+    uart1.begin(9600);
+    uart1.println("{\"status\":\"START\"}");
 
     pinMode(LED_BUILTIN, OUTPUT);
     pinMode(D12,OUTPUT);
@@ -177,6 +183,8 @@ void loop() {
                     meas_unit.readLevel();
                     lcd_display.showLevel();
                     meas_unit.setVmon(level_meter.getLiquidLevel());
+                     // #12
+                    put_json_to_uart();
                     deci_counter = 0;
                 } else {
                     //  動作していなければ計測をターミネート
@@ -219,6 +227,8 @@ void loop() {
             lcd_display.showLevel();
             meas_unit.setVmon(level_meter.getLiquidLevel());
             level_meter.setMode(Timer);
+            // #12
+            put_json_to_uart();
         }
     }
     
@@ -254,6 +264,10 @@ void loop() {
                 wrapper_meas_single();
                 lcd_display.showLevel();
                 meas_unit.setVmon(level_meter.getLiquidLevel());
+                // #12
+                put_json_to_uart();
+                level_meter.setMode(Timer);
+                lcd_display.showMode();
                 // 手動計測中にタイマがタイムアップした場合、それを無視する
                 f_timer_timeup = false;
                 //  測定している間のスイッチ操作を無視
@@ -314,8 +328,8 @@ void wrapper_meas_single(void){
     Serial.println("  Finished.");
 
     digitalWrite(LED_BUILTIN, LOW);  
-    level_meter.setMode(Timer);
-    lcd_display.showMode();
+    // level_meter.setMode(Timer);
+    // lcd_display.showMode();
 }
 
 //  スイッチ操作のISR  スイッチクラスのラッパ 
@@ -345,6 +359,55 @@ void isr_tick_tock(void){
     if (level_meter.incTimeElasped()) {
         f_timer_timeup = true;
     };
+}
+
+// UART出力
+void put_json_to_uart(){
+    
+    String json_payload="";
+
+    {
+        String status="\"status\":";
+        if (level_meter.isSensorError()){
+            status = status + "\"ERROR\"";
+        } else {
+            status = status + "\"NORML\"";
+        };
+        json_payload = "{" + status + ",";
+    }
+
+    {
+        String now_mode ="\"mode\":";
+        switch(level_meter.getMode()){
+            case Manual:
+                now_mode = now_mode+"\"MANUAL\"";
+                break;
+            case Timer:
+                now_mode = now_mode+"\"TIMER\"";
+                break;
+            case Continuous:
+                now_mode = now_mode+"\"CONT.\"";
+                break;
+            default:
+                now_mode = now_mode+"\"\"";
+                break;
+        };
+        json_payload = json_payload + now_mode + ",";
+    }
+
+    json_payload = json_payload + "\"length\":" + String(level_meter.getSensorLength()) + ",";
+ 
+    json_payload = json_payload + "\"period\":" + String(level_meter.getTimerPeriod()/60) + ",";
+ 
+    // sprintf(buf, "%3.1f",level );
+    char buf[8]="";
+    float level = (float)level_meter.getLiquidLevel()/10.0;
+    String now_level = dtostrf(level, 5,1 ,buf);
+    json_payload = json_payload + "\"level\":" + now_level + "}" ;
+
+    uart1.println(json_payload);
+    
+    return;
 }
 
 // メモリ利用状況の確認
