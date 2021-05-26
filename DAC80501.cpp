@@ -167,24 +167,11 @@ bool DAC80501::setVoltage(const uint16_t output,
 /**************************************************************************/
 bool DAC80501::setVoltage(const float output, 
                           const uint32_t i2c_frequency) {
-  i2c_dev->setSpeed(i2c_frequency); // Set I2C frequency to desired speed
-
-  uint8_t packet[3];
 
   if (  output < 0.0 || output > 2.5 ){
     return false;
   };
 
-  uint16_t output_bin = output * DAC80501::DAC_VOLT2LSB;
+  return DAC80501::setVoltage((uint16_t)(output * DAC80501::DAC_VOLT2LSB), i2c_frequency);
 
-  packet[0] = DAC80501::CMD::CMD_DAC_BUF;
-  packet[1] = output_bin / 256;        // Upper data bits (D15.....D8)
-  packet[2] = (output_bin % 256);      // Lower data bits (D7......D0)
-
-  if (!i2c_dev->write(packet, 3)) {
-    return false;
-  }
-
-  i2c_dev->setSpeed(100000); // reset to arduino default
-  return true;
 }
