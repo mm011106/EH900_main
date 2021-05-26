@@ -141,6 +141,8 @@ void setup() {
 
     Serial.println("");
     Serial.println("START : ---");
+    //  アナログモニタ出力  ゼロリセット
+    meas_unit.setVmon(0);
   
     //  計測モードのために画面初期化
     lcd_display.showMeter();
