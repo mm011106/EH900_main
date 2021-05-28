@@ -399,7 +399,7 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
   return round(results);
 }
 /*!
- * @brief アナログモニタ出力の電圧を設定する(100%=1V)
+ * @brief アナログモニタ出力の電圧を設定する(100%=1.1V, 0%=0.1V)
  * @param value 液面 [0.1%]    上限：100.0%
  */
 void Measurement::setVmon(uint16_t value){
@@ -412,7 +412,7 @@ void Measurement::setVmon(uint16_t value){
     if (value <= 1000) {
         da_value = ( VMON_COUNT_PER_VOLT * (value + 100) ) / 1000;
     //     100.0% = 1.1V, 0%=0.1V 
-        v_mon_dac->setVoltage(da_value, false);
+        v_mon_dac->setVoltage(da_value);
     }
 
 }
