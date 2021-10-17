@@ -1,6 +1,6 @@
 //
 //
-//
+// 2021/10/17 revise struct Meter_parameters in the header file.
 //
 // 
 

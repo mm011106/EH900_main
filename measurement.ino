@@ -91,7 +91,7 @@ boolean Measurement::init(void){
     Serial.print("AD OFFSET Comp 23: "); Serial.println(LevelMeter->getAdcOfsComp23());
 
     Serial.print("Current Sorce setting: "); Serial.println(LevelMeter->getCurrentSetting());
-
+    Serial.print("Vmon Offset [LSB]: "); Serial.println(LevelMeter->getVmonOffset());
 
     // 電流源設定用DAC  初期化
     if(current_adj_dac){
@@ -410,7 +410,9 @@ void Measurement::setVmon(uint16_t value){
 
     //  100.0%以下の値ならそのまま設定、それ以外は更新しない
     if (value <= 1000) {
-        da_value = ( VMON_COUNT_PER_VOLT * (value + 100) ) / 1000;
+        // da_value = ( VMON_COUNT_PER_VOLT * (value + 100) ) / 1000;
+        da_value = (( VMON_COUNT_PER_VOLT * value ) / 1000) + (uint16_t)((VMON_COUNT_PER_VOLT / 10) - LevelMeter->getVmonOffset());
+
     //     100.0% = 1.1V, 0%=0.1V 
         v_mon_dac->setVoltage(da_value);
     }
