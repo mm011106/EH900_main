@@ -172,6 +172,7 @@ void loop() {
             // DECIMATION 回ごとに1回計測
             if (deci_counter == DECIMATION - 1 ){
                 Serial.print("-");
+                deci_counter = 0;
                 //  電流源の動作確認
                 if ( meas_unit.getStatus() ){
                     //  動作していれば  1回計測、表示
@@ -179,7 +180,6 @@ void loop() {
                     meas_unit.readLevel();
                     lcd_display.showLevel();
                     meas_unit.setVmon(level_meter.getLiquidLevel());
-                    deci_counter = 0;
                 } else {
                     //  動作していなければ計測をターミネート
                     meas_unit.currentOff();
@@ -187,7 +187,8 @@ void loop() {
                     // エラー表示
                     level_meter.setSensorError();
                     lcd_display.showLevel();
-                    meas_unit.setVmon(level_meter.getLiquidLevel());
+                    // meas_unit.setVmon(level_meter.getLiquidLevel());
+                    meas_unit.setVmonFailed();
                     // タイマーモードに移行
                     level_meter.setMode(Timer);
                     Serial.println("  Current Sorce Fail. Cont meas terminated...");
@@ -219,7 +220,11 @@ void loop() {
             level_meter.setMode(Manual);
             wrapper_meas_single();
             lcd_display.showLevel();
-            meas_unit.setVmon(level_meter.getLiquidLevel());
+            if(level_meter.isSensorError()){
+                meas_unit.setVmonFailed();
+            } else {
+                meas_unit.setVmon(level_meter.getLiquidLevel());
+            }
             level_meter.setMode(Timer);
         }
     }
@@ -255,7 +260,11 @@ void loop() {
                 lcd_display.showMode();
                 wrapper_meas_single();
                 lcd_display.showLevel();
-                meas_unit.setVmon(level_meter.getLiquidLevel());
+                if(level_meter.isSensorError()){
+                    meas_unit.setVmonFailed();
+                } else {
+                    meas_unit.setVmon(level_meter.getLiquidLevel());
+                }
                 // 手動計測中にタイマがタイムアップした場合、それを無視する
                 f_timer_timeup = false;
                 //  測定している間のスイッチ操作を無視
@@ -273,6 +282,7 @@ void loop() {
                     //  電流源にエラーがあればエラー表示してタイマーモードへ移行
                     level_meter.setSensorError();
                     lcd_display.showLevel();
+                    meas_unit.setVmonFailed();
                     level_meter.setMode(Timer);
                 } else {
                     level_meter.clearSensorError();

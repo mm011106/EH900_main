@@ -270,10 +270,12 @@ boolean Measurement::measSingle(void){
 
         //  センサへの熱伝導待ち時間の間に3回計測する（動いていますというフィードバックのため）
         for (uint16_t i =0 ; i < 3; i++){
+            f_sensor_error = (pio->digitalRead(PIO_CURRENT_ERRFLAG) == LOW);
             Measurement::readLevel();
             delay(delay_time/3);
         }
         //  確定値の計測
+        f_sensor_error = (pio->digitalRead(PIO_CURRENT_ERRFLAG) == LOW);
         Measurement::readLevel();
         Measurement::currentOff();
 
@@ -416,5 +418,16 @@ void Measurement::setVmon(uint16_t value){
     //     100.0% = 1.1V, 0%=0.1V 
         v_mon_dac->setVoltage(da_value);
     }
+}
+
+/*!
+ * @brief アナログモニタ出力を0Vに設定して、計測不能状態を示す
+ * @param voild
+ */
+void Measurement::setVmonFailed(void){
+
+    v_mon_dac->setVoltage((uint16_t) 0);
 
 }
+
+
