@@ -42,6 +42,9 @@ struct Meter_parameters{
 
     //  現在のモードを示す
     Modes   mode;
+
+    //      アナログモニタ出力DAのオフセット（0.1V出力時の誤差）  [LSB] 
+    uint16_t vmon_da_offset;
 };
 
 
@@ -199,6 +202,18 @@ class eh900
         void setCurrentSetting(uint16_t value){
             if ( 670 < value && value < 830){
                 eh_status.current_set_default = value;
+            }
+        };
+
+        //  Vmon用DAのオフセット値を得る [LSB]
+        int16_t getVmonOffset(void) const {
+            return eh_status.vmon_da_offset;
+        };
+
+        //  Vmon用DAのオフセット値を設定する [LSB]
+        void setVmonOffset(int16_t value){
+            if ( -200 < value && value < 200){
+                eh_status.vmon_da_offset = value;
             }
         };
 };

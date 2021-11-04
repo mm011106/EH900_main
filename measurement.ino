@@ -4,7 +4,7 @@
 namespace{  //  I2C adress 
     constexpr uint16_t I2C_ADDR_ADC            = 0x48;
     constexpr uint16_t I2C_ADDR_CURRENT_ADJ    = 0x60;
-    constexpr uint16_t I2C_ADDR_V_MON          = 0x61;
+    constexpr uint16_t I2C_ADDR_V_MON          = 0x49;
     constexpr uint16_t I2C_ADDR_PIO            = 0x20;
 }
 
@@ -51,6 +51,9 @@ namespace{
 
     //  DAC MCP4275の1Vあたりのカウント (3.3V電源にて） COUNT/V
     constexpr uint16_t DAC_COUNT_PER_VOLT = 1241;
+
+    //  DAC80501 1Vあたりのカウント(2.5VFS時）  COUNT/V
+    constexpr uint16_t VMON_COUNT_PER_VOLT = 26214;
 }
 
 // Measurement::Measurement(eh900* pModel) : LevelMeter(pModel) {}
@@ -88,7 +91,7 @@ boolean Measurement::init(void){
     Serial.print("AD OFFSET Comp 23: "); Serial.println(LevelMeter->getAdcOfsComp23());
 
     Serial.print("Current Sorce setting: "); Serial.println(LevelMeter->getCurrentSetting());
-
+    Serial.print("Vmon Offset [LSB]: "); Serial.println(LevelMeter->getVmonOffset());
 
     // 電流源設定用DAC  初期化
     if(current_adj_dac){
@@ -111,15 +114,21 @@ boolean Measurement::init(void){
         delete v_mon_dac;
     }
 
-    v_mon_dac = new Adafruit_MCP4725;
+    v_mon_dac = new DAC80501;
 
     status = v_mon_dac->begin(I2C_ADDR_V_MON, &Wire);
     if (!status) { 
         Serial.println("error on Analog Monitor DAC.  ");
         f_init_succeed = false;
     } else {
-        // アナログモニタ出力   リセット 
-        Measurement::setVmon(0);
+        status = v_mon_dac->init();
+         if (!status) { 
+            Serial.println("error on Analog Monitor DAC.  ");
+            f_init_succeed = false;
+        } else {
+            // アナログモニタ出力   リセット 
+            Measurement::setVmon(0);
+        }
     }
 
     //  PIOポート設定
@@ -390,17 +399,22 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
   return round(results);
 }
 /*!
- * @brief アナログモニタ出力の電圧を設定する(100%=1V)
+ * @brief アナログモニタ出力の電圧を設定する(100%=1.1V, 0%=0.1V)
  * @param value 液面 [0.1%]    上限：100.0%
  */
 void Measurement::setVmon(uint16_t value){
     uint16_t da_value=0;
 
+    // debug
+    // return;
+
     //  100.0%以下の値ならそのまま設定、それ以外は更新しない
     if (value <= 1000) {
-        da_value = ( DAC_COUNT_PER_VOLT * value ) / 1000;
-    //     100.0% = 1V
-        v_mon_dac->setVoltage(da_value, false);
+        // da_value = ( VMON_COUNT_PER_VOLT * (value + 100) ) / 1000;
+        da_value = (( VMON_COUNT_PER_VOLT * value ) / 1000) + (uint16_t)((VMON_COUNT_PER_VOLT / 10) - LevelMeter->getVmonOffset());
+
+    //     100.0% = 1.1V, 0%=0.1V 
+        v_mon_dac->setVoltage(da_value);
     }
 
 }
