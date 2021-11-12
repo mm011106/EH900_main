@@ -52,6 +52,7 @@ class Measurement {
     //  モニタ出力制御
     
         void setVmon(uint16_t);
+        void setVmonFailed(void);
 
     private:
         //  電流設定用DAコンバータ
