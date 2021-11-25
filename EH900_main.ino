@@ -1,4 +1,6 @@
 #include <Arduino.h>
+#include "EH900_clkConfig.h"
+
 #include <HardwareTimer.h>
 
 #include "switch_class.h"
@@ -8,11 +10,14 @@
 #include "eh900_config.h"
 
 //  スイッチのポート指定
-constexpr uint16_t MEAS_SWITCH = D3;    
+constexpr uint16_t MEAS_SWITCH = D3;  
+//  スイッチのLEDポート設定
+constexpr uint16_t MEAS_LED = PA3;  
 // 長押しを判定する時間[ms]
 constexpr uint16_t DURATION_LONG_PRESS = 2000; 
 //  １秒のタイマ設定値（調整込み）  [us]
-constexpr uint32_t ONE_SECOND = 999025; 
+// constexpr uint32_t ONE_SECOND = 999025; 
+constexpr uint32_t ONE_SECOND = 1000000; 
 //  手動計測時の表示アップデート周期[us]
 constexpr uint32_t UPDATE_CYCLE =300000;    
 //  連続計測時のデシメーション（10回ループを回ったら1回計測）
@@ -46,7 +51,7 @@ void setup() {
     Serial.begin(115200);
     Serial.println("INIT:--");
 
-    pinMode(LED_BUILTIN, OUTPUT);
+    pinMode(MEAS_LED, OUTPUT);
     pinMode(D12,OUTPUT);
     digitalWrite(D12,LOW);
 
@@ -183,7 +188,7 @@ void loop() {
                 } else {
                     //  動作していなければ計測をターミネート
                     meas_unit.currentOff();
-                    digitalWrite(LED_BUILTIN, LOW);
+                    digitalWrite(MEAS_LED, LOW);
                     // エラー表示
                     level_meter.setSensorError();
                     lcd_display.showLevel();
@@ -200,7 +205,7 @@ void loop() {
             //  連続計測モードでスイッチが押されたら
             //  タイマーモードへ移行して、測定を終了する
             meas_unit.currentOff();
-            digitalWrite(LED_BUILTIN, LOW); 
+            digitalWrite(MEAS_LED, LOW); 
             level_meter.setMode(Timer); 
             //  スイッチが離されていることを確認して完了
             while (! meas_sw.hasReleased()){
@@ -235,7 +240,7 @@ void loop() {
     //  スイッチが押されていれば、測定モードの変更
     if (meas_sw.isDepressed()){       // スイッチが押されている時、
         meas_sw.clearChangeStatus();
-        digitalWrite(LED_BUILTIN, HIGH);
+        digitalWrite(MEAS_LED, HIGH);
 
         // lcd.setCursor(0, 1);
         if(meas_sw.getDuration() > DURATION_LONG_PRESS){   //押されている時間が規定より長ければCモード
@@ -275,7 +280,7 @@ void loop() {
             case Continuous:    // 連続計測モードへ移行
 
                 Serial.print("Cont. Measureing... ");
-                digitalWrite(LED_BUILTIN, HIGH);
+                digitalWrite(MEAS_LED, HIGH);
                 lcd_display.showMode();
                 //  電流をon
                 if ( !meas_unit.currentOn() ){ 
@@ -309,7 +314,7 @@ void loop() {
 //  1回計測 measurement::measSingleのラッパ
 void wrapper_meas_single(void){
     Serial.print("Single shot Measureing...");
-    digitalWrite(LED_BUILTIN, HIGH);  // turn the LED
+    digitalWrite(MEAS_LED, HIGH);  // turn the LED
     lcd_display.showMode();
 
     Serial.print("timer start.. ");
@@ -325,7 +330,7 @@ void wrapper_meas_single(void){
 
     Serial.println("  Finished.");
 
-    digitalWrite(LED_BUILTIN, LOW);  
+    digitalWrite(MEAS_LED, LOW);  
     level_meter.setMode(Timer);
     lcd_display.showMode();
 }
