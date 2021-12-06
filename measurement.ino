@@ -402,6 +402,7 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
 }
 /*!
  * @brief アナログモニタ出力の電圧を設定する(100%=1.1V, 0%=0.1V)
+ *        センサエラーの判断も含んで出力
  * @param value     液面 [0.1%]    上限：100.0%
  */
 void Measurement::setVmon(uint16_t value){
