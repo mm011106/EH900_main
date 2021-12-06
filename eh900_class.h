@@ -126,7 +126,8 @@ class eh900
         
     //  フラグ
 
-        //  センサエラーかどうか
+        //  センサエラーかどうか。ErrorならTrue
+        //  次の計測までエラーは保持される
         boolean isSensorError(void) const {
             return eh_status.f_sensor_error;
         };

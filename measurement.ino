@@ -402,7 +402,7 @@ uint32_t Measurement::read_current(void){  // return measured current in [microA
 }
 /*!
  * @brief アナログモニタ出力の電圧を設定する(100%=1.1V, 0%=0.1V)
- * @param value 液面 [0.1%]    上限：100.0%
+ * @param value     液面 [0.1%]    上限：100.0%
  */
 void Measurement::setVmon(uint16_t value){
     uint16_t da_value=0;
@@ -410,13 +410,19 @@ void Measurement::setVmon(uint16_t value){
     // debug
     // return;
 
-    //  100.0%以下の値ならそのまま設定、それ以外は更新しない
-    if (value <= 1000) {
-        // da_value = ( VMON_COUNT_PER_VOLT * (value + 100) ) / 1000;
-        da_value = (( VMON_COUNT_PER_VOLT * value ) / 1000) + (uint16_t)((VMON_COUNT_PER_VOLT / 10) - LevelMeter->getVmonOffset());
+    //  sensorErrorのときは0Vを出力
+    if (LevelMeter->isSensorError()) {
+        v_mon_dac->setVoltage((uint16_t) 0);
+    } else {
+        //  正常に計測できていて
+        //  100.0%以下の値ならそのまま設定、それ以外は更新しない
+        if (value <= 1000) {
+            // da_value = ( VMON_COUNT_PER_VOLT * (value + 100) ) / 1000;
+            da_value = (( VMON_COUNT_PER_VOLT * value ) / 1000) + (uint16_t)((VMON_COUNT_PER_VOLT / 10) - LevelMeter->getVmonOffset());
 
-    //     100.0% = 1.1V, 0%=0.1V 
-        v_mon_dac->setVoltage(da_value);
+        //     100.0% = 1.1V, 0%=0.1V 
+            v_mon_dac->setVoltage(da_value);
+        }
     }
 }
 
