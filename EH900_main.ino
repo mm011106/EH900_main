@@ -25,8 +25,8 @@ constexpr uint32_t UPDATE_CYCLE =300000;
 constexpr uint16_t DECIMATION = 10; 
 constexpr uint32_t CONT_MEAS_PERIOD = 1000000;
 
-//  ループ1回ごとの時間待ち[ms] 実際のループ１周は  この時間＋処理時間（600us）
-constexpr uint16_t LOOP_WAIT = 100; 
+//  ループ1回ごとの時間待ち[ms] 実際のループ１周は  この時間＋処理時間
+constexpr uint16_t LOOP_WAIT = 97; 
 
 
 constexpr boolean DEBUG = false;  // デバグフラグ
@@ -180,6 +180,7 @@ void loop() {
     digitalWrite(D12,HIGH); // 動作時間測定
     //  モード表示リフレッシュ
     lcd_display.showMode();
+    delay(2);
     lcd_display.showTimer();
 
     //  連続モードのとき
