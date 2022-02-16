@@ -123,6 +123,7 @@ void Eh_display::showMeter(void){
 void Eh_display::showLevel(void){
     uint16_t value = LevelMeter->getLiquidLevel();
 
+    delay(10);
     rgb_lcd::setCursor(POSITION_LEVEL, 1);
     rgb_lcd::print(right_align(String((float)value/10.0,1),5));
     rgb_lcd::print("%");

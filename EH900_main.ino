@@ -8,6 +8,7 @@
 #include "measurement.h"
 #include "display_class.h"
 #include "eh900_config.h"
+#include "IotGateway.h"
 
 //  スイッチのポート指定
 constexpr uint16_t MEAS_SWITCH = D3;  
@@ -22,8 +23,10 @@ constexpr uint32_t ONE_SECOND = 1000000;
 constexpr uint32_t UPDATE_CYCLE =300000;    
 //  連続計測時のデシメーション（10回ループを回ったら1回計測）
 constexpr uint16_t DECIMATION = 10; 
-//  ループ1回ごとの時間待ち[ms] 実際のループ１周は  この時間＋処理時間（600us）
-constexpr uint16_t LOOP_WAIT = 100; 
+constexpr uint32_t CONT_MEAS_PERIOD = 1000000;
+
+//  ループ1回ごとの時間待ち[ms] 実際のループ１周は  この時間＋処理時間
+constexpr uint16_t LOOP_WAIT = 97; 
 
 
 constexpr boolean DEBUG = false;  // デバグフラグ
@@ -34,6 +37,7 @@ Eh_display lcd_display(&level_meter);
 
 Switch meas_sw(MEAS_SWITCH);
 
+IotGateway uart1(D0, D1);
 
 //  手動計測時の表示アップデート用タイマ
 HardwareTimer* disp_update_timer = new HardwareTimer(TIM1);
@@ -46,6 +50,9 @@ uint16_t deci_counter = 0;      //  連続計測の時のループ回数カウ�
 uint16_t system_error = 0;      //  起動時のエラーコード    
                                 //      0:ok 1:設定MEMORY 2:計測ユニット 4:表示 
 boolean f_timer_timeup=false;   //  計測タイマー用フラグ
+boolean f_cont_mode_status = false; // 連続計測モードフラグ（電流源の制御のために必要）
+
+boolean f_mode_confirmed = false;   // スイッチ操作によるモード変更が確定（ボタンを離した時）したかどうかのフラグ
 
 void setup() {
     Serial.begin(115200);
@@ -114,6 +121,10 @@ void setup() {
     tick_tock_timer -> refresh();
     tick_tock_timer -> attachInterrupt(isr_tick_tock);
 
+    Serial.println("IoT Gateway interface :");
+    // initialize IoT Gateway port:
+    uart1.begin(9600);
+    uart1.clearPayload();
 
     //  設定モードへ移行するスイッチ操作の完了待ち[3s]
     delay(3000);
@@ -146,8 +157,13 @@ void setup() {
 
     Serial.println("");
     Serial.println("START : ---");
+
     //  アナログモニタ出力  ゼロリセット
     meas_unit.setVmon(0);
+
+    // モードの初期設定
+    level_meter.setMode(Timer);
+    f_mode_confirmed = true;
   
     //  計測モードのために画面初期化
     lcd_display.showMeter();
@@ -164,112 +180,118 @@ void loop() {
     digitalWrite(D12,HIGH); // 動作時間測定
     //  モード表示リフレッシュ
     lcd_display.showMode();
+    delay(2);
     lcd_display.showTimer();
 
     //  連続モードのとき
-    if (level_meter.getMode() == Continuous ){
-
-        // スイッチが離されていれば
-        if(meas_sw.isReleased()){
-            //  タイマー動作をしないようにする
-            f_timer_timeup = false;
-            ++deci_counter;
-            // DECIMATION 回ごとに1回計測
-            if (deci_counter == DECIMATION - 1 ){
-                Serial.print("-");
-                deci_counter = 0;
-                //  電流源の動作確認
-                if ( meas_unit.getStatus() ){
-                    //  動作していれば  1回計測、表示
-                    level_meter.clearSensorError();
-                    meas_unit.readLevel();
-                    lcd_display.showLevel();
-                    meas_unit.setVmon(level_meter.getLiquidLevel());
-                } else {
-                    //  動作していなければ計測をターミネート
-                    meas_unit.currentOff();
-                    digitalWrite(MEAS_LED, LOW);
-                    // エラー表示
-                    level_meter.setSensorError();
-                    lcd_display.showLevel();
-                    // meas_unit.setVmon(level_meter.getLiquidLevel());
-                    meas_unit.setVmonFailed();
-                    // タイマーモードに移行
-                    level_meter.setMode(Timer);
-                    Serial.println("  Current Sorce Fail. Cont meas terminated...");
-                }
+    if (level_meter.getMode() == Continuous && f_mode_confirmed ){
+            //  タイマーを無視する 
+        f_timer_timeup = false; 
+        ++deci_counter;
+        // DECIMATION 回ごとに1回計測   大体1秒ごと
+        if (deci_counter == DECIMATION - 1 ){
+            Serial.print("-");
+            deci_counter = 0;
+            //  電流源の動作確認
+            if ( meas_unit.getStatus() ){
+                //  動作していれば  1回計測、表示
+                level_meter.clearSensorError();
+                meas_unit.readLevel();
+                lcd_display.showLevel();
+                meas_unit.setVmon(level_meter.getLiquidLevel());
+                submit_status();
+            } else {
+                //  動作していなければ計測をターミネート
+                meas_unit.currentOff();
+                digitalWrite(MEAS_LED, LOW);
+                // エラー表示
+                level_meter.setSensorError();
+                lcd_display.showLevel();
+                // meas_unit.setVmon(level_meter.getLiquidLevel());
+                meas_unit.setVmonFailed();
+                // タイマーモードに移行
+                level_meter.setMode(Timer);
+                Serial.println("  Current Sorce Fail. Cont meas terminated...");
             }
         }
-        
-        if(meas_sw.hasDepressed() ){
-            //  連続計測モードでスイッチが押されたら
-            //  タイマーモードへ移行して、測定を終了する
-            meas_unit.currentOff();
-            digitalWrite(MEAS_LED, LOW); 
-            level_meter.setMode(Timer); 
-            //  スイッチが離されていることを確認して完了
-            while (! meas_sw.hasReleased()){
-                meas_sw.updateStatus();
-            }
-            meas_sw.clearChangeStatus();
-            Serial.println("  Finished.");
-        }    
+        // }
+          
     }
 
     //  タイマモードの時
-    if (level_meter.getMode() == Timer){
+    if (level_meter.getMode() == Timer && f_mode_confirmed){
 
         if (f_timer_timeup) {  //  タイムアップが起きれば計測する
             f_timer_timeup = false;
             Serial.print("Timer UP - ");
             level_meter.setMode(Manual);
+            digitalWrite(MEAS_LED, HIGH);
+            lcd_display.showMode();
             wrapper_meas_single();
             lcd_display.showLevel();
-            if(level_meter.isSensorError()){
-                meas_unit.setVmonFailed();
-            } else {
-                meas_unit.setVmon(level_meter.getLiquidLevel());
-            }
+            meas_unit.setVmon(level_meter.getLiquidLevel());
             level_meter.setMode(Timer);
+            submit_status();
+            digitalWrite(MEAS_LED, LOW);
         }
     }
     
+ 
     // スイッチの状態をサンプリング
     meas_sw.updateStatus();
 
-    //  スイッチが押されていれば、測定モードの変更
+    //  スイッチが押されていれば、測定モードの変更 Timer->>Cont or  Timer->>Manual or Cont ->> Timer
     if (meas_sw.isDepressed()){       // スイッチが押されている時、
         meas_sw.clearChangeStatus();
-        digitalWrite(MEAS_LED, HIGH);
 
-        // lcd.setCursor(0, 1);
-        if(meas_sw.getDuration() > DURATION_LONG_PRESS){   //押されている時間が規定より長ければCモード
-            // lcd.print("C");
-            level_meter.setMode(Continuous);
-        } else {                                    //そうでなければMモード
-            level_meter.setMode(Manual);
+        //  モード遷移  Cont ->> Timer
+        if (level_meter.getMode() == Continuous && f_mode_confirmed){
+            meas_unit.currentOff();
+            digitalWrite(MEAS_LED, LOW); 
+            level_meter.setMode(Timer); 
+            
+            //  スイッチが離されていることを確認して完了
+            while (! meas_sw.hasReleased()){
+                meas_sw.updateStatus();
+            }
+            Serial.println("  Cont meas Finished.");
+        } else {
+        
+        //  モード遷移  Timer ->> Cont or Manual
+            digitalWrite(MEAS_LED, HIGH);   
+            f_mode_confirmed = false;  //   スイッチを離した時にモード確定なので、この時点ではモード未確定
+            // lcd.setCursor(0, 1);
+            if(meas_sw.getDuration() > DURATION_LONG_PRESS){   //押されている時間が規定より長ければCモード
+                // lcd.print("C");
+                level_meter.setMode(Continuous);
+
+            } else {                                    //そうでなければMモード
+                level_meter.setMode(Manual);
+            
+            }
         }
     } 
 
-    //  スイッチが離された時  モード毎のコードを実行  
-    if (meas_sw.hasReleased()){
+    //  スイッチが離された時  モードを確定して、モード変更時の初期化もしくは処理を行う  
+    if (meas_sw.hasReleased() && !f_mode_confirmed){
         meas_sw.clearChangeStatus();
-
+        f_mode_confirmed = true;        //  モード確定
         //  スイッチ状態のモニタ
         // Serial.print(meas_sw.getDuration()); Serial.print(":");
         // Serial.println(ModeNames[level_meter.getMode()]);
 
         switch (level_meter.getMode()){
             case Manual:    //1回計測を実行して完了
-
+                digitalWrite(MEAS_LED, HIGH);   // LEDを点灯
                 lcd_display.showMode();
-                wrapper_meas_single();
-                lcd_display.showLevel();
-                if(level_meter.isSensorError()){
-                    meas_unit.setVmonFailed();
-                } else {
-                    meas_unit.setVmon(level_meter.getLiquidLevel());
-                }
+                wrapper_meas_single();          //  計測
+                lcd_display.showLevel();        //  測定値表示（エラーを含む）
+                submit_status();                //  IoTゲートウエイ 送信
+                meas_unit.setVmon(level_meter.getLiquidLevel());    //  アナログモニタ出力更新（エラーを含む）
+                digitalWrite(MEAS_LED, LOW);    // LEDを消灯
+                level_meter.setMode(Timer);
+                lcd_display.showMode();
+
                 // 手動計測中にタイマがタイムアップした場合、それを無視する
                 f_timer_timeup = false;
                 //  測定している間のスイッチ操作を無視
@@ -277,8 +299,7 @@ void loop() {
                 
                 break;
         
-            case Continuous:    // 連続計測モードへ移行
-
+            case Continuous:    // 連続計測モードの準備
                 Serial.print("Cont. Measureing... ");
                 digitalWrite(MEAS_LED, HIGH);
                 lcd_display.showMode();
@@ -293,6 +314,7 @@ void loop() {
                     level_meter.clearSensorError();
                     lcd_display.showLevel();
                 }
+                // cont_meas_timer -> resume();//    表示リフレッシュ用タイマ動作開始
 
                 break;
 
@@ -311,14 +333,20 @@ void loop() {
     delay(LOOP_WAIT);
 }
 
-//  1回計測 measurement::measSingleのラッパ
+
+/*!
+    @brief  1回計測 measurement::measSingleのラッパ.  
+    測定結果、エラー共に装置の状態を示す構造体(eh900)の要素に反映されるので戻り値はない
+    @param 
+    @return
+*/
 void wrapper_meas_single(void){
     Serial.print("Single shot Measureing...");
-    digitalWrite(MEAS_LED, HIGH);  // turn the LED
-    lcd_display.showMode();
+    // digitalWrite(MEAS_LED, HIGH);  // turn the LED
+    // lcd_display.showMode();
 
     Serial.print("timer start.. ");
-
+    
     disp_update_timer -> resume();//    表示リフレッシュ用タイマ動作開始
     if (!meas_unit.measSingle()){
         level_meter.setSensorError();
@@ -330,13 +358,42 @@ void wrapper_meas_single(void){
 
     Serial.println("  Finished.");
 
-    digitalWrite(MEAS_LED, LOW);  
-    level_meter.setMode(Timer);
-    lcd_display.showMode();
+    // digitalWrite(MEAS_LED, LOW);  
+    // level_meter.setMode(Timer);
+    // lcd_display.showMode();
 }
 
+    /*!
+    @brief  IoTGatewayに対してデータを出力する  
+    @param 
+    @return
+    */
+void submit_status(void){
+    Serial.println("sumbit_status():");
+    String current_status = "ERROR";
+    if (!level_meter.isSensorError()){
+        current_status = "NORMAL";
+    }
+    uart1.addPayload("status", "NORMAL");
+    Serial.print("  status ");Serial.println(current_status);
+    uart1.addPayload("mode",String(ModeNames[level_meter.getMode()]));
+    Serial.print("  mode "); Serial.println(String(ModeNames[level_meter.getMode()]));
+    uart1.addPayload("length", (int32_t) level_meter.getSensorLength());
+    Serial.print("  length "); Serial.println(level_meter.getSensorLength());
+    uart1.addPayload("period",(int32_t) level_meter.getTimerPeriod());
+    Serial.print("  period "); Serial.println(level_meter.getTimerPeriod());
+    uart1.addPayload("level",(float)level_meter.getLiquidLevel()/(float) 10.0, (uint8_t)1);
+    Serial.print("  level "); Serial.println((float)level_meter.getLiquidLevel()/(float)10.0);
+    // clear the string:
+    Serial.println("  sending data");
+    uart1.sendPayload();
+    uart1.clearPayload();
+    Serial.println("  finished.");
+}
+
+
 //  スイッチ操作のISR  スイッチクラスのラッパ 
-void isr_warpper_meas_sw(){    
+void isr_warpper_meas_sw(void){    
     meas_sw.read_switch_status();
     Serial.print("!");
 }

@@ -14,10 +14,11 @@ public:
     // スイッチの押し続けられている時間を計測   ループの中で頻度高く呼び出す必要あり
     void updateStatus(void);
 
-    // スイッチが押されている（押されていた）時間を返す
+    // スイッチが押されている（押されていた）時間を返す。
+    // この変数は次にスイッチが押されるまで持続し、
+    // clearDuration()  でクリアされます。
     uint32_t getDuration(void){
-        // この変数は次にスイッチが押されるまで持続します。
-        // clearDuration()  でクリアされます。
+        
         return push_duration;
     };
 
