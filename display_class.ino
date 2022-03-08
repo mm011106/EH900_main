@@ -184,6 +184,7 @@ void Eh_display::showMode(void){
     } else {
         rgb_lcd::write(":");
     }
+    rgb_lcd::setCursor(POSITION_MODE,0);
 
 }
 
@@ -193,7 +194,7 @@ void Eh_display::showMode(void){
 void Eh_display::showTimer(void){
     rgb_lcd::setCursor(POSITION_TIMER_COUNT,0);
     rgb_lcd::print(right_align(String(LevelMeter->getTimerElasped() / 60),2));
-
+    rgb_lcd::setCursor(POSITION_MODE,0);
 }
 
 /*!
