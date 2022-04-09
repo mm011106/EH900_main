@@ -92,8 +92,12 @@ boolean Eh_display::init(uint16_t error){
 
     rgb_lcd::clear();
     rgb_lcd::setCursor(2, 0);
-
     rgb_lcd::print("-- EH-900 --");
+
+    rgb_lcd::setCursor(0, 1);
+    rgb_lcd::print(REV);
+
+
     if(error != 0){
         rgb_lcd::setCursor(3, 1);
         rgb_lcd::print("INIT ERR:");
@@ -106,6 +110,7 @@ boolean Eh_display::init(uint16_t error){
     @brief  メータの基本フォーマットを表示
 */
 void Eh_display::showMeter(void){
+        rgb_lcd::clear();
         rgb_lcd::setCursor(0, 0);
         rgb_lcd::print(" :  /   E:    :F");
 
@@ -184,6 +189,7 @@ void Eh_display::showMode(void){
     } else {
         rgb_lcd::write(":");
     }
+    rgb_lcd::setCursor(POSITION_MODE,0);
 
 }
 
@@ -193,7 +199,7 @@ void Eh_display::showMode(void){
 void Eh_display::showTimer(void){
     rgb_lcd::setCursor(POSITION_TIMER_COUNT,0);
     rgb_lcd::print(right_align(String(LevelMeter->getTimerElasped() / 60),2));
-
+    rgb_lcd::setCursor(POSITION_MODE,0);
 }
 
 /*!
