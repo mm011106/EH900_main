@@ -10,6 +10,8 @@
 #include "eh900_config.h"
 #include "IotGateway.h"
 
+constexpr char* REV = (char*)"REV1.1 #2022/02";
+
 //  スイッチのポート指定
 constexpr uint16_t MEAS_SWITCH = D3;  
 //  スイッチのLEDポート設定
@@ -58,6 +60,8 @@ void setup() {
     Serial.begin(115200);
     Serial.println("INIT:--");
 
+    Serial.print("Firmware REV : "); Serial.println(REV);
+    
     pinMode(MEAS_LED, OUTPUT);
     pinMode(D12,OUTPUT);
     digitalWrite(D12,LOW);
